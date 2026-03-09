@@ -1,0 +1,7 @@
+{
+  "rewrites": [
+    { "source": "/", "destination": "/login.html" },
+    { "source": "/app", "destination": "/pageforge-skillbinder.html" },
+    { "source": "/admin", "destination": "/pageforge-admin.html" }
+  ]
+}
