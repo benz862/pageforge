@@ -1718,7 +1718,10 @@ const PRICES = {
 };
 
 // Tier capabilities
-const TIER_CAPS = {
+// ── GET ACTIVE CAPS (used by PDF builder) ─────────────────────────────────────
+window.getActiveCaps = function() {
+  return TIER_CAPS[currentTier] || TIER_CAPS.free;
+};
   demo:      { maxPages: 5,   watermark: true,  fonts: ['times','helvetica','courier'], covers: false, toc: false, colors: false },
   free:      { maxPages: 20,  watermark: true,  fonts: ['times','helvetica','courier'], covers: false, toc: false, colors: false },
   starter:   { maxPages: 100, watermark: false, fonts: null, covers: true,  toc: false, colors: false },
