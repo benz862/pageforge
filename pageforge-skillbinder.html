@@ -115,7 +115,7 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--ink);hei
 /* ── WATERMARK OVERLAY ON PDF PREVIEW ── */
 
 /* ── HEADER ── */
-header{background:var(--navy);color:var(--paper);padding:0 1.5rem;display:flex;align-items:center;gap:0.9rem;border-bottom:3px solid var(--gold);position:sticky;top:0;z-index:100;height:58px;}
+header{background:var(--navy);color:var(--paper);padding:0 1.5rem;display:flex;align-items:center;gap:0.9rem;border-bottom:3px solid var(--gold);position:sticky;top:0;z-index:100;min-height:58px;overflow:visible;}
 .header-logo{height:40px;width:40px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid var(--gold);}
 .header-brand{display:flex;flex-direction:column;line-height:1;}
 .header-brand .brand-name{font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:700;color:#fff;}
@@ -245,12 +245,17 @@ textarea#content:focus{outline:none;}
   </div>
   <div class="header-divider"></div>
   <span class="tagline">Professional eBook Typesetting</span>
+  <div id="headerUserInfo" style="display:none;align-items:center;gap:0.55rem;margin-left:0.6rem;padding-left:0.9rem;border-left:1px solid rgba(255,255,255,0.12);">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+    <span id="headerUsername" style="color:rgba(255,255,255,0.8);font-size:0.72rem;font-weight:500;"></span>
+    <span id="headerTierPill" class="tier-pill"></span>
+  </div>
   <div class="header-actions">
     <span id="statusMsg">Ready.</span>
-    <!-- Auth controls injected by JS -->
+    <button class="btn-generate" onclick="window.buildPDF('preview')">👁 Preview PDF</button>
+    <button class="btn-generate btn-dl" onclick="window.buildPDF('download')">⬇ Download PDF</button>
+    <div style="width:1px;height:24px;background:rgba(255,255,255,0.15);margin:0 0.2rem;"></div>
     <div id="authControls"></div>
-    <button class="btn-generate" onclick="buildPDF('preview')">👁 Preview PDF</button>
-    <button class="btn-generate btn-dl" onclick="buildPDF('download')">⬇ Download PDF</button>
   </div>
 </header>
 
@@ -503,10 +508,23 @@ textarea#content:focus{outline:none;}
           <code>### Subheading</code> — Subsection<br>
           <code>**bold**</code> — Bold<br>
           <code>*italic*</code> — Italic<br>
+          <code>***bold italic***</code> — Bold &amp; Italic<br>
           <code>__underline__</code> — Underline<br>
           <code>- item</code> or <code>* item</code> — Bullet<br>
           <code>---</code> — Horizontal rule<br>
           Blank line = new paragraph
+        </p>
+        <p style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid var(--rule);">
+          <strong style="font-size:0.68rem;color:var(--navy);text-transform:uppercase;letter-spacing:0.04em;">Workbook / Interactive</strong><br>
+          <code>- [ ] Task</code> — Unchecked box<br>
+          <code>- [x] Done</code> — Checked box ✓<br>
+        </p>
+        <p style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid var(--rule);">
+          <strong style="font-size:0.68rem;color:var(--navy);text-transform:uppercase;letter-spacing:0.04em;">Tables</strong><br>
+          <code>| Col 1 | Col 2 |</code><br>
+          <code>| ----- | ----- |</code><br>
+          <code>| A     | B     |</code><br>
+          First row = header row
         </p>
       </div>
     </div>
@@ -757,24 +775,42 @@ function clearContent(){document.getElementById('content').value='';updatePrevie
 
 // ─── PARSING ──────────────────────────────────────────────────────────────────
 function parseContent(raw){
-  const tokens=[]; let para=[];
+  const tokens=[]; let para=[]; let tableRows=[];
   function flush(){if(para.length){tokens.push({type:'p',text:para.join(' ').trim()});para=[];}}
-  for(const line of raw.split('\n')){
-    const t=line.trim();
+  function flushTable(){if(tableRows.length){tokens.push({type:'table',rows:tableRows});tableRows=[];}}
+  const lines=raw.split('\n');
+  for(let i=0;i<lines.length;i++){
+    const t=lines[i].trim();
+    // Table row: starts and ends with |
+    if(t.startsWith('|')&&t.endsWith('|')){
+      flush();
+      // Skip separator rows |---|---|
+      const inner=t.slice(1,-1);
+      if(/^[\s\-:|]+$/.test(inner.replace(/\|/g,''))){continue;}
+      const cells=inner.split('|').map(c=>c.trim());
+      tableRows.push(cells);
+      continue;
+    } else { flushTable(); }
     if(t.startsWith('### ')){flush();tokens.push({type:'h3',text:t.slice(4)});}
     else if(t.startsWith('## ')){flush();tokens.push({type:'h2',text:t.slice(3)});}
     else if(t.startsWith('# ')){flush();tokens.push({type:'ch',text:t.slice(2)});}
     else if(t==='---'){flush();tokens.push({type:'hr'});}
+    else if(/^[-*] \[([ xX])\] /.test(t)){
+      flush();
+      const checked=t[3].toLowerCase()==='x';
+      tokens.push({type:'checkbox',checked,text:t.slice(6)});
+    }
     else if(t.startsWith('- ')||t.startsWith('* ')){flush();tokens.push({type:'bullet',text:t.slice(2)});}
     else if(t===''){flush();}
     else{para.push(t);}
   }
-  flush(); return tokens;
+  flushTable(); flush(); return tokens;
 }
 
 // ─── LIVE PREVIEW ─────────────────────────────────────────────────────────────
 function parseInlineHTML(t){
   return t
+    .replace(/\*\*\*(.+?)\*\*\*/g,'<strong><em>$1</em></strong>')
     .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
     .replace(/\*(.+?)\*/g,'<em>$1</em>')
     .replace(/__(.+?)__/g,'<u>$1</u>');
@@ -784,13 +820,14 @@ function parseInlineHTML(t){
 function parseInlineSegments(text){
   const segs=[];
   // Tokenise by bold, italic, underline markers
-  const re=/\*\*(.+?)\*\*|\*(.+?)\*|__(.+?)__|([^*_]+)/g;
+  const re=/\*\*\*(.+?)\*\*\*|\*\*(.+?)\*\*|\*(.+?)\*|__(.+?)__|([^*_]+)/g;
   let m;
   while((m=re.exec(text))!==null){
-    if(m[1]!==undefined) segs.push({text:m[1],bold:true,italic:false,underline:false});
-    else if(m[2]!==undefined) segs.push({text:m[2],bold:false,italic:true,underline:false});
-    else if(m[3]!==undefined) segs.push({text:m[3],bold:false,italic:false,underline:true});
-    else if(m[4]!==undefined) segs.push({text:m[4],bold:false,italic:false,underline:false});
+    if(m[1]!==undefined) segs.push({text:m[1],bold:true,italic:true,underline:false});
+    else if(m[2]!==undefined) segs.push({text:m[2],bold:true,italic:false,underline:false});
+    else if(m[3]!==undefined) segs.push({text:m[3],bold:false,italic:true,underline:false});
+    else if(m[4]!==undefined) segs.push({text:m[4],bold:false,italic:false,underline:true});
+    else if(m[5]!==undefined) segs.push({text:m[5],bold:false,italic:false,underline:false});
   }
   return segs.filter(s=>s.text.length>0);
 }
@@ -897,12 +934,26 @@ function updatePreview(){
            <div class="preview-author">${author}</div>`;
 
   for(const tok of parseContent(raw)){
-    if     (tok.type==='ch')     h += `<div class="preview-ch">${parseInlineHTML(tok.text)}</div>`;
-    else if(tok.type==='h2')     h += `<div class="preview-h2">${parseInlineHTML(tok.text)}</div>`;
-    else if(tok.type==='h3')     h += `<div class="preview-h3">${parseInlineHTML(tok.text)}</div>`;
-    else if(tok.type==='hr')     h += `<hr class="preview-hr"/>`;
-    else if(tok.type==='bullet') h += `<div class="preview-bullet">• ${parseInlineHTML(tok.text)}</div>`;
-    else if(tok.type==='p')      h += `<p>${parseInlineHTML(tok.text)}</p>`;
+    if     (tok.type==='ch')       h += `<div class="preview-ch">${parseInlineHTML(tok.text)}</div>`;
+    else if(tok.type==='h2')       h += `<div class="preview-h2">${parseInlineHTML(tok.text)}</div>`;
+    else if(tok.type==='h3')       h += `<div class="preview-h3">${parseInlineHTML(tok.text)}</div>`;
+    else if(tok.type==='hr')       h += `<hr class="preview-hr"/>`;
+    else if(tok.type==='bullet')   h += `<div class="preview-bullet">• ${parseInlineHTML(tok.text)}</div>`;
+    else if(tok.type==='checkbox') h += `<div class="preview-bullet" style="display:flex;align-items:baseline;gap:0.5rem;"><span style="display:inline-block;width:12px;height:12px;min-width:12px;border:1.5px solid #aaa;border-radius:2px;background:${tok.checked?'#1d3a52':'#fff'};position:relative;top:1px;">${tok.checked?'<span style="color:#fff;font-size:9px;font-weight:900;line-height:12px;display:block;text-align:center;">✓</span>':''}</span><span style="${tok.checked?'text-decoration:line-through;opacity:0.55;':''}">${parseInlineHTML(tok.text)}</span></div>`;
+    else if(tok.type==='table'){
+      const [header,...body]=tok.rows;
+      let tbl=`<table style="width:100%;border-collapse:collapse;font-size:0.78rem;margin:0.6rem 0;">`;
+      if(header){
+        tbl+=`<thead><tr>${header.map(c=>`<th style="border:1px solid #ccd4de;padding:4px 8px;background:#1d3a52;color:#fff;font-weight:700;text-align:left;">${parseInlineHTML(c)}</th>`).join('')}</tr></thead>`;
+      }
+      tbl+=`<tbody>`;
+      body.forEach((row,ri)=>{
+        tbl+=`<tr>${row.map(c=>`<td style="border:1px solid #ccd4de;padding:4px 8px;background:${ri%2===0?'#f7f9fc':'#fff'};">${parseInlineHTML(c)}</td>`).join('')}</tr>`;
+      });
+      tbl+=`</tbody></table>`;
+      h+=tbl;
+    }
+    else if(tok.type==='p')        h += `<p>${parseInlineHTML(tok.text)}</p>`;
   }
   pane.innerHTML = h;
 }
@@ -1157,6 +1208,80 @@ function buildPDF(mode){
         }
         y += lh(fontSize) + paraGap*0.5;
         doc.setTextColor(0,0,0);
+
+      }else if(tok.type==='checkbox'){
+        const cbX   = mL + indent + 3;
+        const cbSize = fontSize * 0.72;
+        const textX  = cbX + cbSize + 3;
+        const cbW    = textW - indent - cbSize - 6;
+        sf(bPdf,'normal',fontSize); tc(bodyRGB);
+        if(y + lh(fontSize) > safeBottom) newPage();
+        // Draw checkbox square
+        doc.setDrawColor(140,140,140);
+        doc.setLineWidth(0.4);
+        doc.rect(cbX, y - cbSize + 0.5, cbSize, cbSize);
+        if(tok.checked){
+          doc.setFillColor(29,58,82);
+          doc.rect(cbX, y - cbSize + 0.5, cbSize, cbSize, 'F');
+          doc.setFont(bPdf,'bold'); doc.setFontSize(fontSize*0.7); doc.setTextColor(255,255,255);
+          doc.text('✓', cbX + cbSize/2, y - 0.2, {align:'center'});
+          doc.setTextColor(...bodyRGB);
+        }
+        doc.setDrawColor(0,0,0); doc.setLineWidth(0.2);
+        const cSegs = parseInlineSegments(tok.text);
+        const cLines = wrapInlineSegments(doc, cSegs, cbW, bPdf, fontSize);
+        for(let li=0;li<cLines.length;li++){
+          if(li>0){ y+=lh(fontSize); if(y+lh(fontSize)>safeBottom) newPage(); }
+          if(tok.checked){
+            // strikethrough
+            const lineW = cLines[li].reduce((acc,s)=>{
+              sf(bPdf,s.bold&&s.italic?'bolditalic':s.bold?'bold':s.italic?'italic':'normal',fontSize);
+              return acc + doc.getTextWidth(s.text);
+            },0);
+            sf(bPdf,'normal',fontSize);
+            doc.setDrawColor(...bodyRGB); doc.setLineWidth(0.3);
+            doc.line(textX, y-fontSize*0.18, textX+lineW, y-fontSize*0.18);
+            doc.setLineWidth(0.2);
+          }
+          drawInlineLine(doc, cLines[li], textX, y, bPdf, fontSize);
+        }
+        y += lh(fontSize) + paraGap*0.5;
+        doc.setTextColor(0,0,0);
+
+      }else if(tok.type==='table'){
+        const rows = tok.rows;
+        if(!rows.length) return;
+        const colCount = Math.max(...rows.map(r=>r.length));
+        const colW = (textW - indent) / colCount;
+        const cellPad = 1.8;
+        const cellH = lh(fontSize) + cellPad * 2;
+        sf(bPdf,'normal',fontSize);
+        for(let ri=0;ri<rows.length;ri++){
+          if(y + cellH > safeBottom) newPage();
+          const isHeader = ri === 0;
+          for(let ci=0;ci<colCount;ci++){
+            const cx = mL + indent + ci * colW;
+            // Cell background
+            if(isHeader){ doc.setFillColor(29,58,82); doc.rect(cx,y-lh(fontSize)+0.5,colW,cellH,'F'); }
+            else if(ri%2===0){ doc.setFillColor(247,249,252); doc.rect(cx,y-lh(fontSize)+0.5,colW,cellH,'F'); }
+            else { doc.setFillColor(255,255,255); doc.rect(cx,y-lh(fontSize)+0.5,colW,cellH,'F'); }
+            // Cell border
+            doc.setDrawColor(180,190,200); doc.setLineWidth(0.25);
+            doc.rect(cx,y-lh(fontSize)+0.5,colW,cellH);
+            // Cell text
+            const cellText = rows[ri][ci] || '';
+            if(isHeader){ sf(bPdf,'bold',fontSize); doc.setTextColor(255,255,255); }
+            else { sf(bPdf,'normal',fontSize); tc(bodyRGB); }
+            const maxCW = colW - cellPad*2;
+            const truncated = doc.getTextWidth(cellText) > maxCW
+              ? doc.splitTextToSize(cellText, maxCW)[0] + '…'
+              : cellText;
+            doc.text(truncated, cx + cellPad, y + cellPad*0.3);
+          }
+          y += cellH;
+        }
+        y += paraGap;
+        doc.setTextColor(0,0,0); doc.setDrawColor(0,0,0);
 
       }else if(tok.type==='p'){
         const xp  = mL + indent;
@@ -1792,11 +1917,12 @@ const PRICES = {
   author:  { monthly: 'price_1T8uD5E6oTidvpnUY4WoPdMo', yearly: 'price_1T8uD5E6oTidvpnUDmxDmym3' },
 };
 
-// Tier capabilities
 // ── GET ACTIVE CAPS (used by PDF builder) ─────────────────────────────────────
 window.getActiveCaps = function() {
   return TIER_CAPS[currentTier] || TIER_CAPS.free;
 };
+
+const TIER_CAPS = {
   demo:      { maxPages: 5,   watermark: true,  fonts: ['times','helvetica','courier'], covers: false, toc: false, colors: false },
   free:      { maxPages: 20,  watermark: true,  fonts: ['times','helvetica','courier'], covers: false, toc: false, colors: false },
   starter:   { maxPages: 100, watermark: false, fonts: null, covers: true,  toc: false, colors: false },
@@ -1914,26 +2040,42 @@ function renderAuthControls() {
   if (!el) return;
 
   if (isDemoMode) {
-    el.innerHTML = `
-      <span class="tier-pill free" style="margin-right:0.3rem;">Demo</span>
-      <a href="login.html" style="background:var(--gold);color:var(--navy-deep);font-size:0.75rem;font-weight:700;padding:0.35rem 0.9rem;border-radius:5px;text-decoration:none;">Sign Up Free →</a>`;
+    el.innerHTML = `<a href="login.html" style="background:var(--gold);color:var(--navy-deep);font-size:0.75rem;font-weight:700;padding:0.35rem 0.9rem;border-radius:5px;text-decoration:none;white-space:nowrap;">Sign Up Free →</a>`;
+    const huInfo = document.getElementById('headerUserInfo');
+    const huName = document.getElementById('headerUsername');
+    const huPill = document.getElementById('headerTierPill');
+    if (huInfo) {
+      huInfo.style.display = 'flex';
+      if (huName) huName.textContent = 'Demo User';
+      if (huPill) { huPill.className = 'tier-pill free'; huPill.textContent = 'Demo'; }
+    }
     return;
   }
+  // Update inline header user info
+  const huInfo = document.getElementById('headerUserInfo');
+  const huName = document.getElementById('headerUsername');
+  const huPill = document.getElementById('headerTierPill');
+
   if (!currentUser) {
     el.innerHTML = `<button class="btn-auth" onclick="openAuth()">Sign In</button>`;
+    if (huInfo) huInfo.style.display = 'none';
   } else {
     const email = currentUser.email || '';
     const short = email.split('@')[0];
-    const pill  = `<span class="tier-pill ${currentTier}">${currentTier.charAt(0).toUpperCase()+currentTier.slice(1)}</span>`;
+    const tierLabel = currentTier.charAt(0).toUpperCase() + currentTier.slice(1);
     const upgrade = currentTier === 'free' || currentTier === 'starter'
       ? `<button class="btn-upgrade" onclick="openPricing()">⬆ Upgrade</button>` : '';
     el.innerHTML = `
       <div class="user-badge">
-        ${pill}
-        <span style="color:rgba(255,255,255,0.6);font-size:0.72rem;">${short}</span>
-        ${upgrade}
         <button class="btn-signout" onclick="signOut()">Sign Out</button>
+        ${upgrade}
       </div>`;
+    // Populate inline header info
+    if (huInfo) {
+      huInfo.style.display = 'flex';
+      if (huName) huName.textContent = short;
+      if (huPill) { huPill.className = `tier-pill ${currentTier}`; huPill.textContent = tierLabel; }
+    }
   }
 }
 
