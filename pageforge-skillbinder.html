@@ -182,7 +182,7 @@ input[type="color"]:focus{outline:none;border-color:var(--navy);}
 .syntax-panel code{background:var(--cream);border:1px solid var(--rule);border-radius:2px;padding:0 3px;color:var(--rust);font-size:0.66rem;}
 
 /* ── MAIN AREA ── */
-.main{display:grid;grid-template-rows:auto 1fr;}
+.main{display:grid;grid-template-rows:auto 1fr;min-height:0;overflow:hidden;}
 .editor-toolbar{background:var(--panel);border-bottom:1px solid var(--rule);padding:0.48rem 1rem;display:flex;align-items:center;gap:0.55rem;flex-wrap:wrap;}
 .editor-toolbar .lbl{font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;color:#6b5d50;}
 .btn-upload{background:var(--navy);color:var(--paper);border:none;border-radius:3px;padding:0.28rem 0.75rem;font-size:0.72rem;font-family:'Inter',sans-serif;font-weight:500;cursor:pointer;transition:background 0.15s;}
@@ -192,12 +192,12 @@ input[type="color"]:focus{outline:none;border-color:var(--navy);}
 .btn-clear{background:transparent;color:var(--rust);border:1px solid var(--rust);border-radius:3px;padding:0.28rem 0.75rem;font-size:0.72rem;font-family:'Inter',sans-serif;font-weight:500;cursor:pointer;}
 .btn-clear:hover{background:var(--rust);color:white;}
 .syntax-hint{margin-left:auto;font-size:0.63rem;color:#8a7a6a;font-family:'JetBrains Mono',monospace;}
-.editor-area{display:grid;grid-template-columns:1fr 1fr;height:100%;}
-textarea#content{font-family:'JetBrains Mono',monospace;font-size:0.78rem;line-height:1.7;color:var(--ink);background:#fefcf8;border:none;border-right:1px solid var(--rule);padding:1.1rem;resize:none;height:100%;}
+.editor-area{display:grid;grid-template-columns:1fr 1fr;height:100%;min-height:0;overflow:hidden;}
+textarea#content{font-family:'JetBrains Mono',monospace;font-size:0.78rem;line-height:1.7;color:var(--ink);background:#fefcf8;border:none;border-right:1px solid var(--rule);padding:1.1rem;resize:none;height:100%;overflow-y:auto;}
 textarea#content:focus{outline:none;}
 
 /* ── PREVIEW ── */
-.preview-pane{padding:1.2rem 1.6rem;overflow-y:auto;background:var(--paper);}
+.preview-pane{padding:1.2rem 1.6rem;overflow-y:auto;background:var(--paper);height:100%;}
 .preview-pane .preview-empty{color:#b0a090;font-style:italic;font-size:0.85rem;}
 .preview-pane .preview-title{font-size:1.3rem;font-weight:700;margin-bottom:0.2rem;}
 .preview-pane .preview-author{font-size:0.85rem;margin-bottom:1rem;font-style:italic;}
