@@ -204,7 +204,7 @@ textarea#content:focus{outline:none;}
 .preview-pane .preview-ch{font-size:1.05rem;font-weight:700;margin-top:1.2rem;margin-bottom:0.25rem;padding-top:0.8rem;border-top:2px solid var(--rule);border-left:3px solid var(--navy);padding-left:0.5rem;}
 .preview-pane .preview-h2{font-size:0.9rem;font-weight:600;margin-top:0.7rem;margin-bottom:0.15rem;}
 .preview-pane .preview-h3{font-size:0.82rem;font-weight:600;margin-top:0.5rem;font-style:italic;}
-.preview-pane .preview-hr{border:none;border-top:1px solid var(--rule);margin:0.6rem 0;}
+.preview-pane .preview-hr{border:none;border-top:1px solid #c8c2b8;margin:1.1rem 0;width:100%;}
 .preview-pane .preview-bullet{font-size:0.82rem;line-height:1.65;margin-bottom:0.2rem;padding-left:1.2rem;text-indent:-1rem;}
 .preview-pane p{font-size:0.82rem;line-height:1.65;margin-bottom:0.4rem;}
 
@@ -512,6 +512,7 @@ textarea#content:focus{outline:none;}
           <code>__underline__</code> — Underline<br>
           <code>- item</code> or <code>* item</code> — Bullet<br>
           <code>---</code> — Horizontal rule<br>
+          <code>____</code> — Fill-in blank line<br>
           Blank line = new paragraph
         </p>
         <p style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid var(--rule);">
@@ -813,29 +814,42 @@ function parseInlineHTML(t){
     .replace(/\*\*\*(.+?)\*\*\*/g,'<strong><em>$1</em></strong>')
     .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
     .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/_{3,}/g, m => `<span style="display:inline-block;width:${Math.max(2, m.length*0.55)}em;border-bottom:1.5px solid currentColor;vertical-align:baseline;margin:0 1px;"></span>`)
     .replace(/__(.+?)__/g,'<u>$1</u>');
 }
 
-// Parse inline segments for PDF rendering (bold, italic, underline)
+// Parse inline segments for PDF rendering (bold, italic, underline, fill-blank)
 function parseInlineSegments(text){
   const segs=[];
-  // Tokenise by bold, italic, underline markers
-  const re=/\*\*\*(.+?)\*\*\*|\*\*(.+?)\*\*|\*(.+?)\*|__(.+?)__|([^*_]+)/g;
+  // First convert ___+ (3+ underscores not part of __word__) to a blank marker
+  // Then tokenise by bold-italic, bold, italic, underline, blank, plain
+  const re=/\*\*\*(.+?)\*\*\*|\*\*(.+?)\*\*|\*(.+?)\*|__([^_]+)__|_{3,}|([^*_]+)/g;
   let m;
   while((m=re.exec(text))!==null){
-    if(m[1]!==undefined) segs.push({text:m[1],bold:true,italic:true,underline:false});
-    else if(m[2]!==undefined) segs.push({text:m[2],bold:true,italic:false,underline:false});
-    else if(m[3]!==undefined) segs.push({text:m[3],bold:false,italic:true,underline:false});
-    else if(m[4]!==undefined) segs.push({text:m[4],bold:false,italic:false,underline:true});
-    else if(m[5]!==undefined) segs.push({text:m[5],bold:false,italic:false,underline:false});
+    if(m[1]!==undefined) segs.push({text:m[1],bold:true,italic:true,underline:false,blank:false});
+    else if(m[2]!==undefined) segs.push({text:m[2],bold:true,italic:false,underline:false,blank:false});
+    else if(m[3]!==undefined) segs.push({text:m[3],bold:false,italic:true,underline:false,blank:false});
+    else if(m[4]!==undefined) segs.push({text:m[4],bold:false,italic:false,underline:true,blank:false});
+    else if(m[0]!==undefined && /^_{3,}$/.test(m[0])) segs.push({text:m[0],bold:false,italic:false,underline:false,blank:true,blankLen:m[0].length});
+    else if(m[5]!==undefined) segs.push({text:m[5],bold:false,italic:false,underline:false,blank:false});
   }
   return segs.filter(s=>s.text.length>0);
 }
 
-// Draw a line of text with mixed bold/italic/underline segments
+// Draw a line of text with mixed bold/italic/underline/blank segments
 function drawInlineLine(doc, segments, x, y, baseFontPdf, baseSz){
   let cx = x;
   for(const seg of segments){
+    if(seg.blank){
+      // Draw a solid fill-in line — width proportional to number of underscores
+      const blankW = (seg.blankLen || 8) * baseSz * 0.352778 * 0.48;
+      const lineY = y + 0.8;
+      doc.setDrawColor(0,0,0); doc.setLineWidth(0.35);
+      doc.line(cx, lineY, cx + blankW, lineY);
+      doc.setLineWidth(0.2);
+      cx += blankW;
+      continue;
+    }
     const st = seg.bold&&seg.italic?'bolditalic':seg.bold?'bold':seg.italic?'italic':'normal';
     doc.setFont(baseFontPdf, st);
     doc.setFontSize(baseSz);
@@ -858,6 +872,14 @@ function wrapInlineSegments(doc, segments, maxW, baseFontPdf, baseSz){
   const spW = doc.getStringUnitWidth(' ') * baseSz * 0.352778;
 
   for(const seg of segments){
+    if(seg.blank){
+      // Treat fill-in blank as a single non-breaking token
+      const blankW = (seg.blankLen || 8) * baseSz * 0.352778 * 0.48;
+      if(curW>0 && curW+blankW > maxW){ lines.push(curLine); curLine=[]; curW=0; }
+      curLine.push({...seg});
+      curW += blankW;
+      continue;
+    }
     const words = seg.text.split(' ');
     for(let wi=0;wi<words.length;wi++){
       const word = words[wi];
@@ -1186,10 +1208,10 @@ function buildPDF(mode){
         doc.setTextColor(0,0,0);
 
       }else if(tok.type==='hr'){
-        y += paraGap;
-        doc.setDrawColor(180,170,160); doc.setLineWidth(0.2);
-        doc.line(mL+textW*0.2, y, mL+textW*0.8, y);
-        y += paraGap*1.5;
+        y += paraGap * 1.5;
+        doc.setDrawColor(200,195,188); doc.setLineWidth(0.3);
+        doc.line(mL, y, mL + textW, y);
+        y += paraGap * 1.5;
 
       }else if(tok.type==='bullet'){
         const bulletX  = mL + indent + 3;
@@ -1217,8 +1239,8 @@ function buildPDF(mode){
         const cbW    = textW - indent - cbSize - 8;
         sf(bPdf,'normal',fontSize); tc(bodyRGB);
         if(y + lh(fontSize) > safeBottom) newPage();
-        // Position box so it sits on the baseline of the text
-        const boxTop = y - fontSize * 0.27;
+        // Position box so it sits on the baseline of the text (fontSize in pt, coords in mm)
+        const boxTop = y - (fontSize * 0.352778 * 0.72);
         doc.setDrawColor(160,160,160);
         doc.setLineWidth(0.35);
         doc.rect(cbX, boxTop, cbSize, cbSize);
