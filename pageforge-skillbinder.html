@@ -1978,7 +1978,9 @@ function showAuthError(msg) {
 }
 
 async function signOut() {
+  if (!sbClient) return;
   await sbClient.auth.signOut();
+  window.location.href = 'login.html';
 }
 
 // ── PRICING MODAL ────────────────────────────────────────────────────────────
