@@ -41,8 +41,8 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--ink);hei
 .tier-pill.publisher{background:#6a0572;color:#e8b4f8;}
 .btn-upgrade{background:var(--gold);color:#1a2a3a;border:none;border-radius:5px;padding:0.35rem 0.8rem;font-size:0.72rem;font-weight:700;cursor:pointer;transition:all 0.18s;white-space:nowrap;}
 .btn-upgrade:hover{background:var(--gold-light);}
-.btn-signout{background:transparent;border:none;color:rgba(255,255,255,0.4);font-size:0.7rem;cursor:pointer;padding:0.2rem 0.4rem;}
-.btn-signout:hover{color:rgba(255,255,255,0.8);}
+.btn-signout{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.75);font-size:0.72rem;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;padding:0.3rem 0.75rem;border-radius:5px;transition:all 0.18s;white-space:nowrap;}
+.btn-signout:hover{background:rgba(220,50,50,0.25);border-color:rgba(220,80,80,0.5);color:#fca5a5;}
 
 /* ── OVERLAY BACKDROP ── */
 .pf-overlay{position:fixed;inset:0;background:rgba(10,20,35,0.75);z-index:1000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(3px);}
@@ -508,6 +508,52 @@ textarea#content:focus{outline:none;}
           <code>---</code> — Horizontal rule<br>
           Blank line = new paragraph
         </p>
+      </div>
+    </div>
+
+    <!-- SAVES & TEMPLATES -->
+    <div class="sidebar-section" id="savesSection">
+      <div class="section-label" style="display:flex;align-items:center;justify-content:space-between;">
+        <span>💾 Saves &amp; Templates</span>
+        <span id="buildLimitBadge" style="font-size:0.6rem;color:var(--muted);font-weight:600;"></span>
+      </div>
+
+      <!-- Sub-tabs -->
+      <div style="display:flex;gap:0;border:1px solid var(--rule);border-radius:5px;overflow:hidden;margin-bottom:0.7rem;">
+        <button class="saves-tab active" id="tabBuilds" onclick="switchSavesTab('builds')"
+          style="flex:1;padding:0.35rem;font-size:0.7rem;font-weight:700;font-family:'Inter',sans-serif;border:none;cursor:pointer;background:#fff;color:var(--navy);border-bottom:2px solid var(--navy);transition:all 0.15s;">
+          My Builds
+        </button>
+        <button class="saves-tab" id="tabTemplates" onclick="switchSavesTab('templates')"
+          style="flex:1;padding:0.35rem;font-size:0.7rem;font-weight:700;font-family:'Inter',sans-serif;border:none;cursor:pointer;background:#f8fafc;color:var(--muted);border-bottom:2px solid transparent;transition:all 0.15s;">
+          Templates
+        </button>
+      </div>
+
+      <!-- BUILDS PANEL -->
+      <div id="buildsPanel">
+        <button onclick="saveCurrentBuild()" id="saveBuildBtn"
+          style="width:100%;background:var(--navy);color:#fff;border:none;border-radius:5px;padding:0.45rem;font-size:0.75rem;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;margin-bottom:0.6rem;transition:background 0.18s;">
+          + Save Current Build
+        </button>
+        <div id="buildsList" style="display:flex;flex-direction:column;gap:0.4rem;max-height:200px;overflow-y:auto;">
+          <div style="font-size:0.72rem;color:var(--muted);text-align:center;padding:0.8rem 0;">
+            Sign in to save builds
+          </div>
+        </div>
+      </div>
+
+      <!-- TEMPLATES PANEL -->
+      <div id="templatesPanel" style="display:none;">
+        <button onclick="saveCurrentTemplate()" id="saveTemplateBtn"
+          style="width:100%;background:var(--gold);color:#fff;border:none;border-radius:5px;padding:0.45rem;font-size:0.75rem;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;margin-bottom:0.6rem;transition:background 0.18s;">
+          + Save Settings as Template
+        </button>
+        <div id="templatesList" style="display:flex;flex-direction:column;gap:0.4rem;max-height:200px;overflow-y:auto;">
+          <div style="font-size:0.72rem;color:var(--muted);text-align:center;padding:0.8rem 0;">
+            Sign in to use templates
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1587,6 +1633,35 @@ updatePreview();
 <!-- ═══════════════════════════════════════════════════════════
      AUTH MODAL
 ═══════════════════════════════════════════════════════════ -->
+<!-- SAVE NAME MODAL -->
+<div class="pf-overlay hidden" id="saveNameOverlay" onclick="if(event.target===this)closeSaveModal()">
+  <div style="background:#fff;border-radius:10px;width:340px;max-width:92vw;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3);border-top:3px solid var(--navy);">
+    <div style="background:var(--navy);padding:1rem 1.2rem;display:flex;align-items:center;justify-content:space-between;">
+      <h3 id="saveModalTitle" style="font-family:'Playfair Display',serif;color:#fff;font-size:1rem;margin:0;">Save Build</h3>
+      <button onclick="closeSaveModal()" style="background:none;border:none;color:rgba(255,255,255,0.5);font-size:1.2rem;cursor:pointer;">✕</button>
+    </div>
+    <div style="padding:1.2rem;">
+      <div style="margin-bottom:0.9rem;">
+        <label style="display:block;font-size:0.68rem;font-weight:700;color:#555;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.35rem;">Name</label>
+        <input type="text" id="saveNameInput" placeholder="e.g. My Novel Draft"
+          style="width:100%;border:1.5px solid var(--rule);border-radius:5px;padding:0.55rem 0.8rem;font-size:0.88rem;font-family:'Inter',sans-serif;color:var(--ink);outline:none;"
+          onkeydown="if(event.key==='Enter')confirmSave()"/>
+      </div>
+      <div id="saveModalMsg" style="font-size:0.74rem;color:#c0392b;margin-bottom:0.6rem;display:none;"></div>
+      <div style="display:flex;gap:0.5rem;">
+        <button onclick="closeSaveModal()"
+          style="flex:1;background:transparent;border:1px solid var(--rule);color:var(--muted);border-radius:5px;padding:0.5rem;font-size:0.8rem;font-family:'Inter',sans-serif;cursor:pointer;">
+          Cancel
+        </button>
+        <button onclick="confirmSave()" id="saveConfirmBtn"
+          style="flex:2;background:var(--navy);color:#fff;border:none;border-radius:5px;padding:0.5rem;font-size:0.82rem;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;">
+          Save
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="pf-overlay hidden" id="authOverlay">
   <div class="auth-modal">
     <div class="auth-modal-header">
@@ -1755,6 +1830,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (session) {
     currentUser = session.user;
     await loadUserTier();
+    await loadSavesAndTemplates();
   }
   renderAuthControls();
   applyTierRestrictions();
@@ -1766,6 +1842,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       closeAuth();
       renderAuthControls();
       applyTierRestrictions();
+      await loadSavesAndTemplates();
     } else if (event === 'SIGNED_OUT') {
       currentUser = null;
       currentTier = 'free';
@@ -1855,7 +1932,7 @@ function renderAuthControls() {
         ${pill}
         <span style="color:rgba(255,255,255,0.6);font-size:0.72rem;">${short}</span>
         ${upgrade}
-        <button class="btn-signout" onclick="signOut()" title="Sign out">✕</button>
+        <button class="btn-signout" onclick="signOut()">Sign Out</button>
       </div>`;
   }
 }
@@ -2054,21 +2131,418 @@ async function selectPlan(tier) {
 }
 
 // ── TIER ENFORCEMENT IN PDF BUILD ────────────────────────────────────────────
-// Patch buildPDF to enforce page cap and watermark
+// ══════════════════════════════════════════════════════════════════════════════
+// SAVES & TEMPLATES
+// ══════════════════════════════════════════════════════════════════════════════
+
+let savesMode = 'builds'; // 'builds' | 'templates'
+let pendingSaveType = null; // 'build' | 'template'
+
+const TIER_BUILD_LIMITS = { demo:0, free:3, starter:25, author:9999, publisher:9999 };
+const TIER_TEMPLATE_LIMITS = { demo:0, free:2, starter:10, author:9999, publisher:9999 };
+
+// ── TAB SWITCHING ─────────────────────────────────────────────────────────────
+function switchSavesTab(tab) {
+  savesMode = tab;
+  document.getElementById('buildsPanel').style.display   = tab === 'builds'    ? 'block' : 'none';
+  document.getElementById('templatesPanel').style.display = tab === 'templates' ? 'block' : 'none';
+  const bTab = document.getElementById('tabBuilds');
+  const tTab = document.getElementById('tabTemplates');
+  bTab.style.background    = tab === 'builds' ? '#fff' : '#f8fafc';
+  bTab.style.color         = tab === 'builds' ? 'var(--navy)' : 'var(--muted)';
+  bTab.style.borderBottom  = tab === 'builds' ? '2px solid var(--navy)' : '2px solid transparent';
+  tTab.style.background    = tab === 'templates' ? '#fff' : '#f8fafc';
+  tTab.style.color         = tab === 'templates' ? 'var(--navy)' : 'var(--muted)';
+  tTab.style.borderBottom  = tab === 'templates' ? '2px solid var(--navy)' : '2px solid transparent';
+}
+
+// ── LOAD SAVES & TEMPLATES on login ──────────────────────────────────────────
+async function loadSavesAndTemplates() {
+  if (!currentUser || !sbClient) return;
+  await loadBuilds();
+  await loadTemplates();
+  updateBuildLimitBadge();
+}
+
+function updateBuildLimitBadge() {
+  const badge = document.getElementById('buildLimitBadge');
+  if (!badge) return;
+  if (!currentUser) { badge.textContent = ''; return; }
+  const limit = TIER_BUILD_LIMITS[currentTier] || 3;
+  if (limit >= 9999) { badge.textContent = 'Unlimited'; return; }
+  // Count will be updated after loadBuilds
+}
+
+// ── BUILDS ────────────────────────────────────────────────────────────────────
+async function loadBuilds() {
+  if (!currentUser || !sbClient) return;
+  const list = document.getElementById('buildsList');
+  list.innerHTML = '<div style="font-size:0.72rem;color:var(--muted);text-align:center;padding:0.5rem;">Loading…</div>';
+
+  const { data, error } = await sbClient
+    .from('builds')
+    .select('id, title, updated_at, page_count, word_count')
+    .eq('user_id', currentUser.id)
+    .order('updated_at', { ascending: false });
+
+  if (error) { list.innerHTML = `<div style="font-size:0.7rem;color:#c0392b;padding:0.4rem;">${error.message}</div>`; return; }
+
+  // Update limit badge
+  const limit = TIER_BUILD_LIMITS[currentTier] || 3;
+  const badge = document.getElementById('buildLimitBadge');
+  if (badge) badge.textContent = limit >= 9999 ? 'Unlimited' : `${data.length}/${limit} builds`;
+
+  if (!data.length) {
+    list.innerHTML = '<div style="font-size:0.72rem;color:var(--muted);text-align:center;padding:0.8rem 0;">No saved builds yet</div>';
+    return;
+  }
+
+  list.innerHTML = data.map(b => `
+    <div style="background:#f8fafc;border:1px solid var(--rule);border-radius:6px;padding:0.5rem 0.65rem;display:flex;align-items:center;justify-content:space-between;gap:0.4rem;">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:0.76rem;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${b.title}</div>
+        <div style="font-size:0.62rem;color:var(--muted);">${formatSaveDate(b.updated_at)}${b.page_count ? ' · ' + b.page_count + 'pp' : ''}</div>
+      </div>
+      <div style="display:flex;gap:0.25rem;flex-shrink:0;">
+        <button onclick="loadBuild('${b.id}')" title="Load"
+          style="background:var(--navy);color:#fff;border:none;border-radius:4px;padding:0.2rem 0.45rem;font-size:0.65rem;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">
+          Load
+        </button>
+        <button onclick="deleteBuild('${b.id}')" title="Delete"
+          style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:4px;padding:0.2rem 0.4rem;font-size:0.65rem;cursor:pointer;font-family:'Inter',sans-serif;">
+          ✕
+        </button>
+      </div>
+    </div>`).join('');
+}
+
+async function saveCurrentBuild() {
+  if (!currentUser) { openAuth(); return; }
+  const limit = TIER_BUILD_LIMITS[currentTier] || 3;
+  if (limit < 9999) {
+    const { count } = await sbClient.from('builds').select('id', { count:'exact', head:true }).eq('user_id', currentUser.id);
+    if (count >= limit) {
+      showToast(`Build limit reached (${limit}). Upgrade to save more.`, 'error'); return;
+    }
+  }
+  pendingSaveType = 'build';
+  const title = document.getElementById('bookTitle')?.value || 'Untitled Build';
+  document.getElementById('saveNameInput').value = title;
+  document.getElementById('saveModalTitle').textContent = 'Save Build';
+  document.getElementById('saveConfirmBtn').style.background = 'var(--navy)';
+  document.getElementById('saveModalMsg').style.display = 'none';
+  document.getElementById('saveNameOverlay').classList.remove('hidden');
+  setTimeout(() => document.getElementById('saveNameInput').focus(), 100);
+}
+
+async function confirmSave() {
+  const name = document.getElementById('saveNameInput').value.trim();
+  if (!name) {
+    document.getElementById('saveModalMsg').textContent = 'Please enter a name.';
+    document.getElementById('saveModalMsg').style.display = 'block';
+    return;
+  }
+  const btn = document.getElementById('saveConfirmBtn');
+  btn.textContent = 'Saving…'; btn.disabled = true;
+
+  if (pendingSaveType === 'build') {
+    await doSaveBuild(name);
+  } else {
+    await doSaveTemplate(name);
+  }
+  btn.textContent = 'Save'; btn.disabled = false;
+}
+
+async function doSaveBuild(name) {
+  const g = id => document.getElementById(id);
+  const buildData = {
+    user_id:       currentUser.id,
+    title:         name,
+    book_title:    g('bookTitle')?.value || '',
+    book_author:   g('bookAuthor')?.value || '',
+    book_subject:  g('bookSubject')?.value || '',
+    book_publisher: g('bookPublisher')?.value || '',
+    content:       g('content')?.value || '',
+    page_settings: getPageSettings(),
+    typography:    getTypographySettings(),
+    layout:        getLayoutSettings(),
+    saved_with_tier: currentTier,
+    word_count:    (g('content')?.value || '').split(/\s+/).filter(Boolean).length,
+  };
+
+  const { error } = await sbClient.from('builds').insert(buildData);
+  if (error) {
+    document.getElementById('saveModalMsg').textContent = error.message;
+    document.getElementById('saveModalMsg').style.display = 'block';
+  } else {
+    closeSaveModal();
+    showToast('Build saved ✓');
+    await loadBuilds();
+  }
+}
+
+async function loadBuild(id) {
+  const { data, error } = await sbClient.from('builds').select('*').eq('id', id).single();
+  if (error || !data) { showToast('Could not load build', 'error'); return; }
+
+  const g = id => document.getElementById(id);
+  const set = (id, val) => { if (g(id) && val !== undefined) g(id).value = val; };
+
+  set('bookTitle',     data.book_title);
+  set('bookAuthor',    data.book_author);
+  set('bookSubject',   data.book_subject);
+  set('bookPublisher', data.book_publisher);
+  set('content',       data.content);
+
+  if (data.page_settings) applyPageSettings(data.page_settings);
+  if (data.typography)    applyTypographySettings(data.typography);
+  if (data.layout)        applyLayoutSettings(data.layout);
+
+  updatePreview();
+  showToast(`Loaded: ${data.title} ✓`);
+}
+
+async function deleteBuild(id) {
+  if (!confirm('Delete this build? This cannot be undone.')) return;
+  const { error } = await sbClient.from('builds').delete().eq('id', id);
+  if (error) { showToast('Delete failed', 'error'); return; }
+  showToast('Build deleted');
+  await loadBuilds();
+}
+
+// ── TEMPLATES ─────────────────────────────────────────────────────────────────
+async function loadTemplates() {
+  if (!currentUser || !sbClient) return;
+  const list = document.getElementById('templatesList');
+  list.innerHTML = '<div style="font-size:0.72rem;color:var(--muted);text-align:center;padding:0.5rem;">Loading…</div>';
+
+  const { data, error } = await sbClient
+    .from('templates')
+    .select('id, name, description, category, is_system, user_id')
+    .or(`user_id.eq.${currentUser.id},is_system.eq.true`)
+    .order('is_system', { ascending: false })
+    .order('name');
+
+  if (error) { list.innerHTML = `<div style="font-size:0.7rem;color:#c0392b;">${error.message}</div>`; return; }
+  if (!data.length) { list.innerHTML = '<div style="font-size:0.72rem;color:var(--muted);text-align:center;padding:0.8rem 0;">No templates yet</div>'; return; }
+
+  list.innerHTML = data.map(t => `
+    <div style="background:${t.is_system ? '#f0f5fb' : '#f8fafc'};border:1px solid ${t.is_system ? '#c4d0dc' : 'var(--rule)'};border-radius:6px;padding:0.5rem 0.65rem;display:flex;align-items:center;justify-content:space-between;gap:0.4rem;">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:0.74rem;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+          ${t.is_system ? '⭐ ' : ''}${t.name}
+        </div>
+        <div style="font-size:0.6rem;color:var(--muted);text-transform:capitalize;">${t.category || 'custom'}</div>
+      </div>
+      <div style="display:flex;gap:0.25rem;flex-shrink:0;">
+        <button onclick="applyTemplate('${t.id}')" title="Apply"
+          style="background:var(--gold);color:#fff;border:none;border-radius:4px;padding:0.2rem 0.45rem;font-size:0.65rem;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">
+          Apply
+        </button>
+        ${!t.is_system ? `<button onclick="deleteTemplate('${t.id}')" title="Delete"
+          style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:4px;padding:0.2rem 0.4rem;font-size:0.65rem;cursor:pointer;font-family:'Inter',sans-serif;">✕</button>` : ''}
+      </div>
+    </div>`).join('');
+}
+
+async function saveCurrentTemplate() {
+  if (!currentUser) { openAuth(); return; }
+  const limit = TIER_TEMPLATE_LIMITS[currentTier] || 2;
+  if (limit < 9999) {
+    const { count } = await sbClient.from('templates')
+      .select('id', { count:'exact', head:true })
+      .eq('user_id', currentUser.id).eq('is_system', false);
+    if (count >= limit) { showToast(`Template limit reached (${limit}). Upgrade to save more.`, 'error'); return; }
+  }
+  pendingSaveType = 'template';
+  document.getElementById('saveNameInput').value = '';
+  document.getElementById('saveModalTitle').textContent = 'Save Template';
+  document.getElementById('saveConfirmBtn').style.background = 'var(--gold)';
+  document.getElementById('saveModalMsg').style.display = 'none';
+  document.getElementById('saveNameOverlay').classList.remove('hidden');
+  setTimeout(() => document.getElementById('saveNameInput').focus(), 100);
+}
+
+async function doSaveTemplate(name) {
+  const templateData = {
+    user_id:       currentUser.id,
+    name,
+    category:      'custom',
+    is_system:     false,
+    page_settings: getPageSettings(),
+    typography:    getTypographySettings(),
+    layout:        getLayoutSettings(),
+  };
+  const { error } = await sbClient.from('templates').insert(templateData);
+  if (error) {
+    document.getElementById('saveModalMsg').textContent = error.message;
+    document.getElementById('saveModalMsg').style.display = 'block';
+  } else {
+    closeSaveModal();
+    showToast('Template saved ✓');
+    await loadTemplates();
+  }
+}
+
+async function applyTemplate(id) {
+  const { data, error } = await sbClient.from('templates').select('*').eq('id', id).single();
+  if (error || !data) { showToast('Could not load template', 'error'); return; }
+  if (data.page_settings) applyPageSettings(data.page_settings);
+  if (data.typography)    applyTypographySettings(data.typography);
+  if (data.layout)        applyLayoutSettings(data.layout);
+  updatePreview();
+  showToast(`Template applied: ${data.name} ✓`);
+}
+
+async function deleteTemplate(id) {
+  if (!confirm('Delete this template?')) return;
+  const { error } = await sbClient.from('templates').delete().eq('id', id).eq('is_system', false);
+  if (error) { showToast('Delete failed', 'error'); return; }
+  showToast('Template deleted');
+  await loadTemplates();
+}
+
+function closeSaveModal() {
+  document.getElementById('saveNameOverlay').classList.add('hidden');
+}
+
+// ── SETTINGS CAPTURE HELPERS ──────────────────────────────────────────────────
+function getPageSettings() {
+  const g = id => document.getElementById(id);
+  return {
+    pageSize:    g('pageSize')?.value,
+    orientation: g('orientation')?.value,
+    margins: {
+      top:    parseFloat(g('mTop')?.value||25),
+      bottom: parseFloat(g('mBottom')?.value||25),
+      left:   parseFloat(g('mLeft')?.value||28),
+      right:  parseFloat(g('mRight')?.value||28),
+      unit:   document.querySelector('.unit-btn.active')?.dataset?.unit || 'mm',
+    },
+    paraSpacing: parseFloat(g('paraSpacing')?.value||3),
+    paraIndent:  parseFloat(g('paraIndent')?.value||7),
+  };
+}
+
+function getTypographySettings() {
+  const g = id => document.getElementById(id);
+  return {
+    body:    { font: g('bodyFont')?.value,  size: g('bodySize')?.value,  lineHeight: g('lineHeight')?.value, color: g('bodyColor')?.value },
+    chapter: { font: g('chFont')?.value,    size: g('chSize')?.value,    color: g('chColor')?.value },
+    h2:      { font: g('h2Font')?.value,    size: g('h2Size')?.value,    color: g('h2Color')?.value },
+    h3:      { font: g('h3Font')?.value,    size: g('h3Size')?.value,    color: g('h3Color')?.value },
+  };
+}
+
+function getLayoutSettings() {
+  const g = id => document.getElementById(id);
+  return {
+    showPageNums: g('showPageNums')?.checked,
+    showToc:      g('showToc')?.checked,
+    coverPage:    g('coverPage')?.checked,
+    chapterBreak: g('chapterBreak')?.checked,
+  };
+}
+
+// ── SETTINGS APPLY HELPERS ────────────────────────────────────────────────────
+function applyPageSettings(s) {
+  const set = (id, val) => { const el = document.getElementById(id); if (el && val !== undefined) el.value = val; };
+  set('pageSize', s.pageSize);
+  set('orientation', s.orientation);
+  if (s.margins) {
+    set('mTop',    s.margins.top);
+    set('mBottom', s.margins.bottom);
+    set('mLeft',   s.margins.left);
+    set('mRight',  s.margins.right);
+  }
+  set('paraSpacing', s.paraSpacing);
+  set('paraIndent',  s.paraIndent);
+}
+
+function applyTypographySettings(t) {
+  const set = (id, val) => { const el = document.getElementById(id); if (el && val !== undefined && val !== null) el.value = val; };
+  if (t.body)    { set('bodyFont', t.body.font); set('bodySize', t.body.size); set('lineHeight', t.body.lineHeight); set('bodyColor', t.body.color); }
+  if (t.chapter) { set('chFont', t.chapter.font); set('chSize', t.chapter.size); set('chColor', t.chapter.color); }
+  if (t.h2)      { set('h2Font', t.h2.font); set('h2Size', t.h2.size); set('h2Color', t.h2.color); }
+  if (t.h3)      { set('h3Font', t.h3.font); set('h3Size', t.h3.size); set('h3Color', t.h3.color); }
+}
+
+function applyLayoutSettings(l) {
+  const setChk = (id, val) => { const el = document.getElementById(id); if (el && val !== undefined) el.checked = val; };
+  setChk('showPageNums', l.showPageNums);
+  setChk('showToc',      l.showToc);
+  setChk('coverPage',    l.coverPage);
+  setChk('chapterBreak', l.chapterBreak);
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+function showToast(msg, type='success') {
+  let toast = document.getElementById('pfToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'pfToast';
+    toast.style.cssText = `position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;padding:0.65rem 1.1rem;border-radius:7px;font-family:'Inter',sans-serif;font-size:0.8rem;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,0.2);transition:all 0.3s;transform:translateY(60px);opacity:0;max-width:280px;`;
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.style.background = type === 'error' ? '#dc2626' : '#1d3a52';
+  toast.style.color = '#fff';
+  toast.style.borderLeft = `3px solid ${type === 'error' ? '#fca5a5' : '#c9922a'}`;
+  requestAnimationFrame(() => { toast.style.transform='translateY(0)'; toast.style.opacity='1'; });
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => { toast.style.transform='translateY(60px)'; toast.style.opacity='0'; }, 3000);
+}
+
+function formatSaveDate(dt) {
+  if (!dt) return '';
+  const d = new Date(dt);
+  return d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
+}
+
+// ── HOOK INTO AUTH STATE CHANGE ───────────────────────────────────────────────
+const _origOnAuth = typeof handleAuthStateChange === 'function' ? handleAuthStateChange : null;
+
+// Extend the existing onAuthStateChange to also load saves
+const _sbOnAuth = sbClient => {
+  sbClient.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' && session) {
+      await loadSavesAndTemplates();
+    } else if (event === 'SIGNED_OUT') {
+      document.getElementById('buildsList').innerHTML = '<div style="font-size:0.72rem;color:var(--muted);text-align:center;padding:0.8rem 0;">Sign in to save builds</div>';
+      document.getElementById('templatesList').innerHTML = '<div style="font-size:0.72rem;color:var(--muted);text-align:center;padding:0.8rem 0;">Sign in to use templates</div>';
+      document.getElementById('buildLimitBadge').textContent = '';
+    }
+  });
+};
+
+// Call after sbClient is initialized — patch DOMContentLoaded
+document.addEventListener('DOMContentLoaded', () => {
+  // Wait for sbClient to be ready then hook saves
+  const waitForSb = setInterval(() => {
+    if (window.sbClient || sbClient) {
+      clearInterval(waitForSb);
+      const client = window.sbClient || sbClient;
+      _sbOnAuth(client);
+      // If already signed in, load immediately
+      if (currentUser) loadSavesAndTemplates();
+    }
+  }, 200);
+}, { once: true });
+
+// ── PATCH buildPDF: enforce caps before calling original ─────────────────────
 const _origBuildPDF = buildPDF;
 window.buildPDF = function(mode) {
-  // Check if user is trying to use restricted features
+  if (isDemoMode) { _origBuildPDF(mode); return; } // demo handled inside
   const caps = TIER_CAPS[currentTier] || TIER_CAPS.free;
-
   if (!caps.covers) {
-    // Clear covers if not allowed
-    covers.front = null; covers.back = null;
+    window.coverFront = null; window.coverBack = null;
   }
   if (!caps.toc) {
     const tocEl = document.getElementById('showToc');
     if (tocEl) tocEl.checked = false;
   }
-
   _origBuildPDF(mode);
-
-  // Watermark is applied inside buildPDF via the flag 
+};
+</script>
+</body>
+</html>
