@@ -939,7 +939,7 @@ function updatePreview(){
     else if(tok.type==='h3')       h += `<div class="preview-h3">${parseInlineHTML(tok.text)}</div>`;
     else if(tok.type==='hr')       h += `<hr class="preview-hr"/>`;
     else if(tok.type==='bullet')   h += `<div class="preview-bullet">• ${parseInlineHTML(tok.text)}</div>`;
-    else if(tok.type==='checkbox') h += `<div class="preview-bullet" style="display:flex;align-items:baseline;gap:0.5rem;"><span style="display:inline-block;width:12px;height:12px;min-width:12px;border:1.5px solid #aaa;border-radius:2px;background:${tok.checked?'#1d3a52':'#fff'};position:relative;top:1px;">${tok.checked?'<span style="color:#fff;font-size:9px;font-weight:900;line-height:12px;display:block;text-align:center;">✓</span>':''}</span><span style="${tok.checked?'text-decoration:line-through;opacity:0.55;':''}">${parseInlineHTML(tok.text)}</span></div>`;
+    else if(tok.type==='checkbox') h += `<div class="preview-bullet" style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.25rem;"><span style="display:inline-flex;align-items:center;justify-content:center;width:13px;height:13px;min-width:13px;border:1.5px solid ${tok.checked?'#1d3a52':'#aab5c2'};border-radius:2px;background:${tok.checked?'#1d3a52':'#fff'};font-size:9px;font-weight:900;color:#fff;line-height:1;">${tok.checked?'✓':''}</span><span style="${tok.checked?'text-decoration:line-through;opacity:0.5;':''}">${parseInlineHTML(tok.text)}</span></div>`;
     else if(tok.type==='table'){
       const [header,...body]=tok.rows;
       let tbl=`<table style="width:100%;border-collapse:collapse;font-size:0.78rem;margin:0.6rem 0;">`;
@@ -1210,78 +1210,103 @@ function buildPDF(mode){
         doc.setTextColor(0,0,0);
 
       }else if(tok.type==='checkbox'){
-        const cbX   = mL + indent + 3;
-        const cbSize = fontSize * 0.72;
-        const textX  = cbX + cbSize + 3;
-        const cbW    = textW - indent - cbSize - 6;
+        // Checkbox: small square (~3.5mm), text beside it, properly baseline-aligned
+        const cbSize = 3.5;  // fixed mm — looks like a real checkbox
+        const cbX    = mL + indent + 4;
+        const textX  = cbX + cbSize + 2.5;
+        const cbW    = textW - indent - cbSize - 8;
         sf(bPdf,'normal',fontSize); tc(bodyRGB);
         if(y + lh(fontSize) > safeBottom) newPage();
-        // Draw checkbox square
-        doc.setDrawColor(140,140,140);
-        doc.setLineWidth(0.4);
-        doc.rect(cbX, y - cbSize + 0.5, cbSize, cbSize);
+        // Position box so it sits on the baseline of the text
+        const boxTop = y - fontSize * 0.27;
+        doc.setDrawColor(160,160,160);
+        doc.setLineWidth(0.35);
+        doc.rect(cbX, boxTop, cbSize, cbSize);
         if(tok.checked){
           doc.setFillColor(29,58,82);
-          doc.rect(cbX, y - cbSize + 0.5, cbSize, cbSize, 'F');
-          doc.setFont(bPdf,'bold'); doc.setFontSize(fontSize*0.7); doc.setTextColor(255,255,255);
-          doc.text('✓', cbX + cbSize/2, y - 0.2, {align:'center'});
+          doc.rect(cbX, boxTop, cbSize, cbSize, 'F');
+          sf(bPdf,'bold', fontSize * 0.75);
+          doc.setTextColor(255,255,255);
+          doc.text('✓', cbX + cbSize/2, boxTop + cbSize * 0.72, {align:'center'});
+          sf(bPdf,'normal',fontSize);
           doc.setTextColor(...bodyRGB);
         }
         doc.setDrawColor(0,0,0); doc.setLineWidth(0.2);
-        const cSegs = parseInlineSegments(tok.text);
+        const cSegs  = parseInlineSegments(tok.text);
         const cLines = wrapInlineSegments(doc, cSegs, cbW, bPdf, fontSize);
         for(let li=0;li<cLines.length;li++){
           if(li>0){ y+=lh(fontSize); if(y+lh(fontSize)>safeBottom) newPage(); }
           if(tok.checked){
-            // strikethrough
             const lineW = cLines[li].reduce((acc,s)=>{
               sf(bPdf,s.bold&&s.italic?'bolditalic':s.bold?'bold':s.italic?'italic':'normal',fontSize);
               return acc + doc.getTextWidth(s.text);
             },0);
             sf(bPdf,'normal',fontSize);
-            doc.setDrawColor(...bodyRGB); doc.setLineWidth(0.3);
-            doc.line(textX, y-fontSize*0.18, textX+lineW, y-fontSize*0.18);
+            doc.setDrawColor(...bodyRGB); doc.setLineWidth(0.25);
+            doc.line(textX, y - fontSize*0.15, textX + lineW, y - fontSize*0.15);
             doc.setLineWidth(0.2);
           }
           drawInlineLine(doc, cLines[li], textX, y, bPdf, fontSize);
         }
-        y += lh(fontSize) + paraGap*0.5;
+        y += lh(fontSize) + paraGap*0.4;
         doc.setTextColor(0,0,0);
 
       }else if(tok.type==='table'){
         const rows = tok.rows;
-        if(!rows.length) return;
-        const colCount = Math.max(...rows.map(r=>r.length));
-        const colW = (textW - indent) / colCount;
-        const cellPad = 1.8;
-        const cellH = lh(fontSize) + cellPad * 2;
-        sf(bPdf,'normal',fontSize);
-        for(let ri=0;ri<rows.length;ri++){
-          if(y + cellH > safeBottom) newPage();
-          const isHeader = ri === 0;
-          for(let ci=0;ci<colCount;ci++){
-            const cx = mL + indent + ci * colW;
-            // Cell background
-            if(isHeader){ doc.setFillColor(29,58,82); doc.rect(cx,y-lh(fontSize)+0.5,colW,cellH,'F'); }
-            else if(ri%2===0){ doc.setFillColor(247,249,252); doc.rect(cx,y-lh(fontSize)+0.5,colW,cellH,'F'); }
-            else { doc.setFillColor(255,255,255); doc.rect(cx,y-lh(fontSize)+0.5,colW,cellH,'F'); }
-            // Cell border
-            doc.setDrawColor(180,190,200); doc.setLineWidth(0.25);
-            doc.rect(cx,y-lh(fontSize)+0.5,colW,cellH);
-            // Cell text
-            const cellText = rows[ri][ci] || '';
-            if(isHeader){ sf(bPdf,'bold',fontSize); doc.setTextColor(255,255,255); }
-            else { sf(bPdf,'normal',fontSize); tc(bodyRGB); }
-            const maxCW = colW - cellPad*2;
-            const truncated = doc.getTextWidth(cellText) > maxCW
-              ? doc.splitTextToSize(cellText, maxCW)[0] + '…'
-              : cellText;
-            doc.text(truncated, cx + cellPad, y + cellPad*0.3);
+        if(!rows.length){ /* skip */ }else{
+          const colCount = Math.max(...rows.map(r=>r.length));
+          const cellPadX = 2.5;
+          const cellPadY = 1.8;
+          const tableW   = textW - indent;
+          const colW     = tableW / colCount;
+          sf(bPdf,'normal',fontSize);
+
+          for(let ri=0;ri<rows.length;ri++){
+            const isHeader = ri===0;
+            // Pre-calculate row height by wrapping all cells
+            const wrappedCells = [];
+            let maxLines = 1;
+            for(let ci=0;ci<colCount;ci++){
+              const cellText = rows[ri][ci] || '';
+              sf(bPdf, isHeader?'bold':'normal', fontSize);
+              const wrapped = doc.splitTextToSize(cellText, colW - cellPadX*2);
+              wrappedCells.push(wrapped);
+              if(wrapped.length > maxLines) maxLines = wrapped.length;
+            }
+            const rowH = maxLines * lh(fontSize) + cellPadY * 2;
+
+            if(y + rowH > safeBottom) newPage();
+
+            const rowTop = y - lh(fontSize) + cellPadY;
+            for(let ci=0;ci<colCount;ci++){
+              const cx = mL + indent + ci * colW;
+              // Background
+              if(isHeader){
+                doc.setFillColor(29,58,82);
+                doc.rect(cx, rowTop, colW, rowH, 'F');
+              } else if(ri%2===0){
+                doc.setFillColor(247,249,252);
+                doc.rect(cx, rowTop, colW, rowH, 'F');
+              } else {
+                doc.setFillColor(255,255,255);
+                doc.rect(cx, rowTop, colW, rowH, 'F');
+              }
+              // Border
+              doc.setDrawColor(180,190,200); doc.setLineWidth(0.25);
+              doc.rect(cx, rowTop, colW, rowH);
+              // Text — each wrapped line
+              if(isHeader){ sf(bPdf,'bold',fontSize); doc.setTextColor(255,255,255); }
+              else { sf(bPdf,'normal',fontSize); tc(bodyRGB); }
+              const lines = wrappedCells[ci];
+              for(let li=0;li<lines.length;li++){
+                doc.text(lines[li], cx + cellPadX, rowTop + cellPadY + lh(fontSize)*0.82 + li*lh(fontSize));
+              }
+            }
+            y += rowH;
           }
-          y += cellH;
+          y += paraGap;
+          doc.setTextColor(0,0,0); doc.setDrawColor(0,0,0);
         }
-        y += paraGap;
-        doc.setTextColor(0,0,0); doc.setDrawColor(0,0,0);
 
       }else if(tok.type==='p'){
         const xp  = mL + indent;
