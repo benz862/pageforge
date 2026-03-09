@@ -803,7 +803,12 @@ function parseContent(raw){
     }
     else if(t.startsWith('- ')||t.startsWith('* ')){flush();tokens.push({type:'bullet',text:t.slice(2)});}
     else if(t===''){flush();}
-    else{para.push(t);}
+    else{
+      // If line starts with bold/italic marker, treat as its own paragraph (don't merge)
+      if(/^(\*\*\*|\*\*|\*)/.test(t) && para.length) flush();
+      para.push(t);
+      if(/^(\*\*\*|\*\*|\*)/.test(t)) flush();
+    }
   }
   flushTable(); flush(); return tokens;
 }
