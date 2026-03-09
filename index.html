@@ -621,9 +621,9 @@ section { padding: 6rem 3rem; }
 
 .pricing-cards {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.5rem;
-  max-width: 960px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.2rem;
+  max-width: 1100px;
   margin: 0 auto;
 }
 
@@ -1170,11 +1170,27 @@ footer {
         <a href="login.html" class="btn-price">Get Starter</a>
       </div>
 
+      <div class="price-card" style="border-color:#7c3aed22;background:linear-gradient(160deg,#faf7ff,#f5f0ff);">
+        <div class="price-tier" style="color:#7c3aed;">Publisher</div>
+        <div class="price-amount" id="publisherPrice"><sup>$</sup>49<span>/mo</span></div>
+        <p class="price-desc" id="publisherDesc">Billed monthly. For teams and high-volume publishers.</p>
+        <hr class="price-divider"/>
+        <ul class="price-features">
+          <li>Everything in Author</li>
+          <li>Unlimited team seats</li>
+          <li>Batch export</li>
+          <li>White-label branding</li>
+          <li>Priority support</li>
+          <li>Custom templates library</li>
+          <li>Dedicated account manager</li>
+        </ul>
+        <a href="mailto:support@skillbinder.com" class="btn-price" style="border-color:#7c3aed;color:#7c3aed;">Contact Us →</a>
+      </div>
+
     </div>
 
-    <p class="reveal" style="margin-top:2rem;font-size:0.85rem;color:var(--muted);">
-      Need team seats, batch export, or white-labelling?
-      <a href="/cdn-cgi/l/email-protection#a0d3d5d0d0cfd2d4e0d3cbc9ccccc2c9cec4c5d28ec3cfcd" style="color:var(--navy);font-weight:600;">Contact us about Publisher — $49/mo →</a>
+    <p class="reveal" style="margin-top:1.5rem;font-size:0.82rem;color:var(--muted);text-align:center;">
+      All paid plans include a 30-day money-back guarantee. No contracts, cancel anytime.
     </p>
   </div>
 </section>
@@ -1220,6 +1236,8 @@ function toggleBilling() {
   document.getElementById('authorDesc').textContent  = yearly ? 'Billed annually · save 25%' : 'Billed monthly. Everything you need for a professional book.';
   document.getElementById('starterPrice').innerHTML = yearly ? '<sup>$</sup>81<span>/yr</span>' : '<sup>$</sup>9<span>/mo</span>';
   document.getElementById('starterDesc').textContent = yearly ? 'Billed annually · save 25%' : 'Billed monthly. Great for occasional publishing.';
+  document.getElementById('publisherPrice').innerHTML = yearly ? '<sup>$</sup>441<span>/yr</span>' : '<sup>$</sup>49<span>/mo</span>';
+  document.getElementById('publisherDesc').textContent = yearly ? 'Billed annually · save 25%' : 'Billed monthly. For teams and high-volume publishers.';
 }
 
 // ── SCROLL REVEAL ─────────────────────────────────────────────────────────────
