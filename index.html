@@ -819,17 +819,21 @@ footer {
 /* ── SCROLL REVEAL ── */
 .reveal {
   opacity: 0;
-  transform: translateY(30px);
-  transition: opacity 0.6s ease, transform 0.6s ease;
+  transform: translateY(24px);
+  transition: opacity 0.55s ease, transform 0.55s ease;
 }
 .reveal.visible {
   opacity: 1;
   transform: translateY(0);
 }
-.reveal-delay-1 { transition-delay: 0.1s; }
-.reveal-delay-2 { transition-delay: 0.2s; }
-.reveal-delay-3 { transition-delay: 0.3s; }
-.reveal-delay-4 { transition-delay: 0.4s; }
+.reveal-delay-1 { transition-delay: 0.08s; }
+.reveal-delay-2 { transition-delay: 0.16s; }
+.reveal-delay-3 { transition-delay: 0.24s; }
+.reveal-delay-4 { transition-delay: 0.32s; }
+/* Fallback: if JS fails, still show everything */
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; }
+}
 </style>
 </head>
 <body>
@@ -1222,4 +1226,21 @@ function toggleBilling() {
 const observer = new IntersectionObserver((entries) => {
   entries.forEach(e => {
     if (e.isIntersecting) {
-      e.target
+      e.target.classList.add('visible');
+      observer.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.08 });
+
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// Trigger already-visible elements on load
+setTimeout(() => {
+  document.querySelectorAll('.reveal').forEach(el => {
+    const rect = el.getBoundingClientRect();
+    if (rect.top < window.innerHeight) el.classList.add('visible');
+  });
+}, 100);
+</script>
+</body>
+</html>
