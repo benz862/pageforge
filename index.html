@@ -879,7 +879,7 @@ footer {
 
     <div class="hero-actions">
       <a href="login.html" class="btn-hero-primary">Start for Free — No Card Required</a>
-      <a href="pageforge-skillbinder.html" class="btn-hero-ghost">See It In Action →</a>
+      <a href="pageforge-skillbinder.html?demo=true" target="_blank" class="btn-hero-ghost">See It In Action →</a>
     </div>
 
     <div class="hero-stats">
@@ -1170,7 +1170,7 @@ footer {
 
     <p class="reveal" style="margin-top:2rem;font-size:0.85rem;color:var(--muted);">
       Need team seats, batch export, or white-labelling?
-      <a href="mailto:support@skillbinder.com" style="color:var(--navy);font-weight:600;">Contact us about Publisher — $49/mo →</a>
+      <a href="/cdn-cgi/l/email-protection#a0d3d5d0d0cfd2d4e0d3cbc9ccccc2c9cec4c5d28ec3cfcd" style="color:var(--navy);font-weight:600;">Contact us about Publisher — $49/mo →</a>
     </p>
   </div>
 </section>
@@ -1182,7 +1182,7 @@ footer {
     <p class="section-sub reveal">Join hundreds of authors, educators, and publishers who use PageForge to produce beautiful books — without the learning curve.</p>
     <div class="cta-actions reveal">
       <a href="login.html" class="btn-hero-primary">Start Writing Free Today</a>
-      <a href="pageforge-skillbinder.html" class="btn-hero-ghost">Explore the App →</a>
+      <a href="pageforge-skillbinder.html?demo=true" target="_blank" class="btn-hero-ghost">Explore the App →</a>
     </div>
   </div>
 </section>
@@ -1196,12 +1196,12 @@ footer {
     <li><a href="#features">Features</a></li>
     <li><a href="#pricing">Pricing</a></li>
     <li><a href="login.html">Sign In</a></li>
-    <li><a href="mailto:support@skillbinder.com">Support</a></li>
+    <li><a href="/cdn-cgi/l/email-protection#a7d4d2d7d7c8d5d3e7d4cccecbcbc5cec9c3c2d589c4c8ca">Support</a></li>
   </ul>
   <div class="footer-copy">© 2026 SkillBinder · Guides for life's complexities</div>
 </footer>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 // ── LOGO ─────────────────────────────────────────────────────────────────────
 // Will show if logo file is present alongside this HTML
 document.getElementById('navLogo').src = 'SkillBinder_Circle_Logo_-_Asset_1.png';
@@ -1222,13 +1222,4 @@ function toggleBilling() {
 const observer = new IntersectionObserver((entries) => {
   entries.forEach(e => {
     if (e.isIntersecting) {
-      e.target.classList.add('visible');
-      observer.unobserve(e.target);
-    }
-  });
-}, { threshold: 0.1 });
-
-document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
-</script>
-</body>
-</html>
+      e.target

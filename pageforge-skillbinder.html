@@ -873,6 +873,33 @@ function updatePreview(){
 
 // ─── PDF GENERATION ───────────────────────────────────────────────────────────
 function buildPDF(mode){
+  // Demo mode — block export
+  if (isDemoMode) {
+    const msg = document.createElement('div');
+    msg.style.cssText = `
+      position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+      background:#fff;border-radius:12px;padding:2rem 2.5rem;text-align:center;
+      box-shadow:0 20px 60px rgba(0,0,0,0.3);z-index:9999;
+      border-top:3px solid #c9922a;max-width:380px;width:90%;
+      font-family:'Inter',sans-serif;
+    `;
+    msg.innerHTML = `
+      <div style="font-size:2rem;margin-bottom:0.8rem;">🔒</div>
+      <div style="font-size:1.1rem;font-weight:700;color:#1d3a52;margin-bottom:0.5rem;">Export Disabled in Demo</div>
+      <p style="font-size:0.85rem;color:#6b8099;line-height:1.6;margin-bottom:1.4rem;">Create a free account to download your PDF — no credit card required. Free accounts export up to 20 pages.</p>
+      <div style="display:flex;gap:0.6rem;justify-content:center;flex-wrap:wrap;">
+        <a href="login.html" style="background:#1d3a52;color:#fff;padding:0.6rem 1.3rem;border-radius:6px;text-decoration:none;font-size:0.85rem;font-weight:700;">Create Free Account</a>
+        <button onclick="this.closest('div[style]').remove()" style="background:transparent;border:1px solid #dde5ee;color:#6b8099;padding:0.6rem 1rem;border-radius:6px;font-size:0.85rem;cursor:pointer;font-family:'Inter',sans-serif;">Continue Browsing</button>
+      </div>
+    `;
+    // Backdrop
+    const backdrop = document.createElement('div');
+    backdrop.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9998;';
+    backdrop.onclick = () => { msg.remove(); backdrop.remove(); };
+    document.body.append(backdrop, msg);
+    return;
+  }
+
   const raw=document.getElementById('content').value.trim();
   if(!raw){setStatus('⚠ No content to export.');return;}
   setStatus('Building PDF…');
@@ -1692,6 +1719,7 @@ const PRICES = {
 
 // Tier capabilities
 const TIER_CAPS = {
+  demo:      { maxPages: 5,   watermark: true,  fonts: ['times','helvetica','courier'], covers: false, toc: false, colors: false },
   free:      { maxPages: 20,  watermark: true,  fonts: ['times','helvetica','courier'], covers: false, toc: false, colors: false },
   starter:   { maxPages: 100, watermark: false, fonts: null, covers: true,  toc: false, colors: false },
   author:    { maxPages: null, watermark: false, fonts: null, covers: true,  toc: true,  colors: true  },
@@ -1703,9 +1731,22 @@ let sbClient = null;
 let currentUser = null;
 let currentTier = 'free';
 let authMode = 'signin';
+let isDemoMode = false;
 
 // ── INIT SUPABASE ─────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
+
+  // ── DEMO MODE: ?demo=true in URL ────────────────────────────────────────────
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('demo') === 'true') {
+    isDemoMode = true;
+    currentTier = 'demo';
+    renderAuthControls();
+    applyTierRestrictions();
+    showDemoBanner();
+    return; // skip Supabase auth entirely
+  }
+
   sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
   const { data: { session } } = await sbClient.auth.getSession();
   if (session) {
@@ -1752,10 +1793,52 @@ async function loadUserTier() {
   }
 }
 
+// ── DEMO BANNER ───────────────────────────────────────────────────────────────
+function showDemoBanner() {
+  // Remove existing banner if any
+  const existing = document.getElementById('demoBanner');
+  if (existing) existing.remove();
+
+  const banner = document.createElement('div');
+  banner.id = 'demoBanner';
+  banner.style.cssText = `
+    position:fixed; top:0; left:0; right:0; z-index:9999;
+    background:linear-gradient(135deg,#1d3a52,#254a68);
+    border-bottom:2px solid #c9922a;
+    padding:0.6rem 1.5rem;
+    display:flex; align-items:center; justify-content:space-between;
+    gap:1rem; flex-wrap:wrap;
+    font-family:'Inter',sans-serif;
+    box-shadow:0 4px 20px rgba(0,0,0,0.3);
+  `;
+  banner.innerHTML = `
+    <div style="display:flex;align-items:center;gap:0.75rem;">
+      <span style="background:#c9922a;color:#0f2535;font-size:0.6rem;font-weight:800;padding:0.2rem 0.6rem;border-radius:20px;letter-spacing:0.12em;text-transform:uppercase;">Demo Mode</span>
+      <span style="color:rgba(255,255,255,0.8);font-size:0.8rem;">You're previewing PageForge — limited to 5 pages, export disabled. Create a free account to unlock all features.</span>
+    </div>
+    <div style="display:flex;gap:0.6rem;flex-shrink:0;">
+      <a href="login.html" style="background:#c9922a;color:#0f2535;font-size:0.78rem;font-weight:700;padding:0.4rem 1rem;border-radius:5px;text-decoration:none;white-space:nowrap;">Create Free Account →</a>
+      <a href="login.html" style="background:transparent;border:1px solid rgba(255,255,255,0.3);color:rgba(255,255,255,0.7);font-size:0.78rem;font-weight:600;padding:0.4rem 0.8rem;border-radius:5px;text-decoration:none;white-space:nowrap;">Sign In</a>
+    </div>
+  `;
+  document.body.prepend(banner);
+
+  // Push app header down
+  const header = document.querySelector('.app-header');
+  if (header) header.style.marginTop = banner.offsetHeight + 'px';
+}
+
 // ── RENDER HEADER AUTH CONTROLS ───────────────────────────────────────────────
 function renderAuthControls() {
   const el = document.getElementById('authControls');
   if (!el) return;
+
+  if (isDemoMode) {
+    el.innerHTML = `
+      <span class="tier-pill free" style="margin-right:0.3rem;">Demo</span>
+      <a href="login.html" style="background:var(--gold);color:var(--navy-deep);font-size:0.75rem;font-weight:700;padding:0.35rem 0.9rem;border-radius:5px;text-decoration:none;">Sign Up Free →</a>`;
+    return;
+  }
   if (!currentUser) {
     el.innerHTML = `<button class="btn-auth" onclick="openAuth()">Sign In</button>`;
   } else {
