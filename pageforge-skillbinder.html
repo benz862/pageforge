@@ -27,7 +27,7 @@
   --blue:#1d3a52;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--ink);min-height:100vh;display:grid;grid-template-rows:auto 1fr auto;}
+body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--ink);height:100vh;display:flex;flex-direction:column;overflow:hidden;}
 
 
 /* ── AUTH BUTTON IN HEADER ── */
@@ -130,7 +130,7 @@ header .tagline{font-size:0.68rem;color:rgba(255,255,255,0.45);letter-spacing:0.
 .btn-dl:hover{background:#0f2030;transform:translateY(-1px);}
 
 /* ── WORKSPACE ── */
-.workspace{display:grid;grid-template-columns:360px 1fr;height:calc(100vh - 58px - 30px);}
+.workspace{display:grid;grid-template-columns:360px 1fr;flex:1;min-height:0;overflow:hidden;}
 
 /* ── SIDEBAR ── */
 .sidebar{background:var(--paper);border-right:1px solid var(--rule);overflow-y:auto;padding:0;display:flex;flex-direction:column;}
