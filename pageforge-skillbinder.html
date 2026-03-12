@@ -4080,10 +4080,15 @@ The learner who masters:
       listEl.innerHTML = '<div style="font-size:0.8rem; color:#666; text-align:center; padding:1rem;">Loading...</div>';
 
       try {
-        const { data: teamData, error: teamErr } = await sbClient.from('teams').select('id').eq('owner_id', currentUser.id).single();
+        let { data: teamData, error: teamErr } = await sbClient.from('teams').select('id').eq('owner_id', currentUser.id).single();
         if (teamErr || !teamData) {
-          listEl.innerHTML = '<div style="font-size:0.8rem; color:#666; text-align:center; padding:1rem;">No team found. Upgrade to Publisher.</div>';
-          return;
+          // Fallback: If no team exists, create one now (covers legacy / manual upgrades)
+          const { data: newTeam, error: insertErr } = await sbClient.from('teams').insert({ owner_id: currentUser.id }).select('id').single();
+          if (insertErr || !newTeam) {
+            listEl.innerHTML = '<div style="font-size:0.8rem; color:#666; text-align:center; padding:1rem;">Error initializing team.</div>';
+            return;
+          }
+          teamData = newTeam;
         }
 
         const { data: members, error: memErr } = await sbClient.from('team_members').select('*').eq('team_id', teamData.id);
@@ -4124,9 +4129,14 @@ The learner who masters:
       }
 
       try {
-        const { data: teamData, error: teamErr } = await sbClient.from('teams').select('id').eq('owner_id', currentUser.id).single();
+        let { data: teamData, error: teamErr } = await sbClient.from('teams').select('id').eq('owner_id', currentUser.id).single();
         if (teamErr || !teamData) {
-          errEl.textContent = 'Team not found. You must be the Publisher owner.'; errEl.classList.add('show'); return;
+          // Fallback: If no team exists, create one now 
+          const { data: newTeam, error: insertErr } = await sbClient.from('teams').insert({ owner_id: currentUser.id }).select('id').single();
+          if (insertErr || !newTeam) {
+            errEl.textContent = 'Error initializing team.'; errEl.classList.add('show'); return;
+          }
+          teamData = newTeam;
         }
 
         // Limit to 3 seats for base Publisher plan
