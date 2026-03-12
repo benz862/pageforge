@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>PDF Test</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.min.js"></script>
+</head>
+<body style="font-family:sans-serif;padding:2rem">
+<h2>pdfmake Test</h2>
+<p id="status">Checking if pdfmake loaded...</p>
+<br>
+<button onclick="testOpen()" style="padding:10px 20px;margin:5px;font-size:16px">Test: Open in new tab</button>
+<button onclick="testDownload()" style="padding:10px 20px;margin:5px;font-size:16px">Test: Download</button>
+<button onclick="testJsPDF()" style="padding:10px 20px;margin:5px;font-size:16px">Test: jsPDF Download</button>
+<pre id="log" style="margin-top:1rem;background:#f0f0f0;padding:1rem;min-height:100px"></pre>
+
+<!-- jsPDF as backup -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script>
+function log(msg) {
+  document.getElementById('log').textContent += msg + '\n';
+  document.getElementById('status').textContent = msg;
+}
+
+window.onload = function() {
+  if (typeof pdfMake !== 'undefined') {
+    log('✓ pdfMake loaded: ' + (typeof pdfMake));
+  } else {
+    log('✗ pdfMake NOT loaded');
+  }
+  if (typeof pdfMake !== 'undefined' && pdfMake.vfs) {
+    log('✓ vfs_fonts loaded');
+  } else {
+    log('✗ vfs_fonts NOT loaded - this is the problem!');
+  }
+  if (typeof window.jspdf !== 'undefined') {
+    log('✓ jsPDF loaded');
+  } else {
+    log('✗ jsPDF not loaded');
+  }
+};
+
+const docDef = {
+  content: [
+    { text: 'Hello PDF World!', fontSize: 22, bold: true, margin: [0,0,0,10] },
+    { text: 'If you can see this, PDF generation works.' }
+  ]
+};
+
+function testOpen() {
+  try {
+    log('Trying pdfMake.open()...');
+    pdfMake.createPdf(docDef).open();
+    log('✓ open() called — check for new tab or pop-up blocker');
+  } catch(e) {
+    log('✗ open() error: ' + e.message);
+  }
+}
+
+function testDownload() {
+  try {
+    log('Trying pdfMake.download()...');
+    pdfMake.createPdf(docDef).download('test.pdf');
+    log('✓ download() called — check Downloads folder');
+  } catch(e) {
+    log('✗ download() error: ' + e.message);
+  }
+}
+
+function testJsPDF() {
+  try {
+    log('Trying jsPDF...');
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.setFontSize(22);
+    doc.text('Hello from jsPDF!', 20, 30);
+    doc.setFontSize(12);
+    doc.text('If you see this file, jsPDF works fine.', 20, 50);
+    doc.save('test-jspdf.pdf');
+    log('✓ jsPDF save() called — check Downloads folder');
+  } catch(e) {
+    log('✗ jsPDF error: ' + e.message);
+  }
+}
+</script>
+</body>
+</html>

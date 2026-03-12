@@ -1,0 +1,159 @@
+# Chapter One: What Is an eBook?
+
+The ebook has quietly transformed the way we read, publish, and share ideas. Where once a writer needed a publisher, a printer, and a distributor to reach a reader across the world, today a single well-formatted file can travel from author to audience in seconds. Yet for all its convenience, the ebook is still a *book* — and it deserves the same care, craft, and typographic attention that has always distinguished a great reading experience from a forgettable one.
+
+## Defining the Modern eBook
+
+At its simplest, an ebook is a digital document designed to be read on a screen. But that definition understates the complexity of what a good ebook must do. It must render cleanly at different sizes. It must respect the hierarchy of its content — chapters, sections, subsections — so that readers can navigate freely. It must handle typography with enough sophistication to avoid the ragged, crowded, or orphaned text that signals amateur production.
+
+The **PDF format** remains one of the most reliable choices for ebook production. Unlike reflowable formats such as EPUB, a PDF preserves your exact layout, margins, fonts, and spacing. What you design is precisely what your reader sees. For instructional texts, reference works, and any document where visual structure matters, PDF is the professional's choice.
+
+### A Brief History of the Format
+
+The PDF was created by Adobe in 1993, originally as a way to share documents that looked identical regardless of the operating system or printer. Over the following decades it became the backbone of digital publishing, legal documentation, and academic distribution. Today, PDF generation tools are available in every major programming language and, as you will discover in this very document, directly within a web browser.
+
+## Why Layout and Typography Matter
+
+A reader rarely notices good typography. They simply feel comfortable. The text flows naturally, the eye finds its place at the start of each line without effort, and the mind is free to engage with the ideas rather than wrestle with the presentation. Poor typography, by contrast, announces itself immediately: lines that are too long, spacing that is too tight, headings that fail to distinguish themselves from body text.
+
+When you produce an ebook, every decision about **margins**, **font size**, **line height**, and **paragraph spacing** is a decision about your reader's comfort. This guide will walk you through each of those decisions in turn.
+
+---
+
+# Chapter Two: Structure and Markup
+
+Every well-produced document begins with structure. Before you think about fonts or margins, you need a clear, consistent system for marking up your content — distinguishing chapters from sections, headings from body text, emphasis from plain prose. In the tool you are using right now, that structure is expressed through a simple, readable markup syntax.
+
+## The Hierarchy of Headings
+
+A well-structured ebook has at most three or four levels of heading. More than that and readers begin to lose their sense of where they are in the document. The conventions used here are:
+
+A single hash mark followed by a space introduces a **Chapter Title**. Each chapter begins on a fresh page, and its title appears automatically in the Table of Contents as a top-level entry.
+
+A double hash mark introduces a **Section Heading** — a major subdivision within a chapter. Section headings also appear in the Table of Contents, indented beneath their parent chapter.
+
+A triple hash mark introduces a **Subheading** — a finer subdivision within a section. These appear in the Table of Contents at a further level of indentation, giving your reader a detailed map of the content.
+
+### When to Use Each Level
+
+Use chapter titles sparingly. A typical nonfiction book of forty thousand words might have eight to twelve chapters. Use section headings to break each chapter into two to five major movements. Reserve subheadings for technical or reference material where readers need fine-grained navigation.
+
+Resist the temptation to use headings as decoration. Every heading should mark a genuine shift in topic or emphasis, not simply provide visual relief from a long block of text.
+
+## Inline Emphasis
+
+Within your body text, you have two tools for emphasis. **Bold text** is produced by wrapping a word or phrase in double asterisks. Use it for terms being introduced for the first time, for key concepts the reader must retain, or for warnings and important notes.
+
+*Italic text* is produced by wrapping a word or phrase in single asterisks. Use it for titles of other works, for foreign words and phrases, for technical terms in context, and for the subtle stress that in spoken language you would convey with your voice.
+
+Use both sparingly. Emphasis that appears on every other line ceases to emphasise anything at all.
+
+### Horizontal Rules
+
+A horizontal rule — produced by typing three hyphens on a line by themselves — creates a visual break within a section without introducing a new heading. Use it to signal a change of scene, a shift in time, or a transition between closely related but distinct ideas. It is the typographic equivalent of a pause.
+
+---
+
+# Chapter Three: Typography and the Reading Experience
+
+If structure is the skeleton of your ebook, typography is its skin. The choices you make about typefaces, sizes, spacing, and alignment determine whether your document feels authoritative or amateurish, inviting or exhausting.
+
+## Choosing a Font
+
+The font selector in this tool offers the three typefaces built into every PDF renderer: **Times**, **Helvetica**, and **Courier**. Each has a distinct personality and a distinct best use.
+
+*Times* — more properly Times New Roman — is a serif typeface designed for extended reading. Its small finishing strokes, called serifs, guide the eye along the baseline and make long passages of body text easier to follow. It is the natural choice for narrative nonfiction, novels, essays, and any document where the reader will spend significant time in continuous prose.
+
+*Helvetica* is a sans-serif typeface: clean, neutral, and modern. It works well for technical documentation, reference material, and documents that will be read in short bursts rather than from cover to cover. Its lack of serifs can make very long passages feel slightly effortful, but for shorter texts it is highly readable.
+
+*Courier* is a monospaced typeface, meaning every character occupies the same horizontal space. It evokes the typewriter and the terminal. Use it for code samples, scripts, or any document where you wish to signal a deliberately plain or retro aesthetic.
+
+### Font Size and Line Height
+
+For body text, a size between ten and twelve points is standard for most page sizes. On a 6×9 inch page — the classic trade paperback format — eleven points is a comfortable default. On a larger Letter or A4 page, you may wish to increase to twelve.
+
+Line height, sometimes called leading, controls the vertical space between lines. A value of 1.4 to 1.6 times the font size is ideal for extended reading. Tighter than 1.4 and the lines begin to crowd each other; looser than 1.6 and the page starts to feel empty and the eye struggles to track from the end of one line to the beginning of the next.
+
+## Margins and White Space
+
+Margins do more than prevent text from running off the page. They give the eye a place to rest. They create the visual rhythm that makes a page feel balanced. On a printed book, generous inner margins account for the binding; on a screen or a PDF ebook, margins frame the text the way a mount frames a painting.
+
+For a 6×9 inch ebook, margins of around **54 to 72 points** on all sides — roughly three quarters of an inch to one inch — are appropriate. For a Letter-sized document intended to be read on screen rather than printed, slightly wider margins of **72 to 90 points** improve readability significantly.
+
+### Paragraph Indent and Spacing
+
+There are two schools of thought on paragraph separation. The traditional book typesetter uses a first-line indent and no additional space between paragraphs. The modern document designer uses no indent but adds space between paragraphs. Both work; mixing them does not.
+
+This tool defaults to a first-line indent with modest paragraph spacing below each block. You can increase the indent for a more classical feel or reduce the paragraph spacing to tighten the text for dense reference material.
+
+---
+
+# Chapter Four: The Table of Contents
+
+A Table of Contents is not merely a navigational aid. It is a promise. It tells your reader what the book contains, in what order, and at what level of detail. A well-constructed ToC gives a reader confidence before they have read a single word of the body text.
+
+## How the ToC Is Generated
+
+In this tool, the Table of Contents is built automatically from your markup. Every line beginning with a single hash mark becomes a top-level ToC entry. Every line beginning with double hash marks becomes a second-level entry, indented beneath the chapter above it. Every line beginning with triple hash marks becomes a third-level entry, indented further still.
+
+You do not write the ToC yourself. You write well-structured content, and the ToC emerges from that structure. This means that if you rename a chapter, reorganise your sections, or add new headings, the ToC updates automatically the next time you generate the PDF. There is no danger of a ToC that points to the wrong page or lists a heading that no longer exists.
+
+## Hyperlinked Entries
+
+When the **Hyperlink ToC entries** option is enabled, each entry in the Table of Contents is a clickable link. In a PDF reader on any device — desktop, tablet, or e-reader — clicking an entry jumps directly to that point in the document. This transforms the ToC from a static list into a genuine navigation system.
+
+### Designing for Navigation
+
+When you write with navigation in mind, you structure your chapters differently than you might if you imagined every reader proceeding from the first page to the last. You ensure that each chapter can stand reasonably well on its own. You use headings to mark genuine waypoints, not just visual breaks. You think of your reader not only as someone reading forward through the text, but as someone who may return to a specific section days or weeks later.
+
+This is good discipline for any long-form writing. The reader who navigates freely through your document is the reader who finds it most useful — and most likely to recommend it to others.
+
+## Page Numbers
+
+Page numbers anchor the reader in the physical space of the document. Even in a digital PDF, where pages scroll continuously, knowing that you are on page forty-seven of one hundred and twenty gives a sense of progress, of proportion, of how much remains.
+
+This tool places page numbers at the bottom centre of each page, beginning from the first page of body text. The cover page and the Table of Contents page are not numbered, in keeping with standard publishing practice.
+
+---
+
+# Chapter Five: Producing Your eBook
+
+You have structured your content, chosen your typography, and configured your layout. Now it is time to produce the final document. This chapter walks through the generation process and offers guidance on reviewing and distributing your finished ebook.
+
+## Before You Generate
+
+Read through your content one final time in the preview pane. The preview is not a pixel-perfect representation of the PDF, but it shows you the hierarchy of your headings, the flow of your paragraphs, and any obvious structural errors. Look for:
+
+**Heading levels used inconsistently** — a section that should be a chapter, or a subheading used where a section heading is needed.
+
+**Paragraphs run together** — if two paragraphs appear as one, check that there is a blank line between them in the editor.
+
+**Emphasis overused** — scan for bold and italic text. If more than one word in ten carries some form of emphasis, the text will feel breathless and the emphasis will lose its force.
+
+### Configuring the Final Settings
+
+On the 6×9 inch format, the following settings produce a result close to a professionally typeset trade paperback:
+
+Font: *Times*, at **11 points**, with a line height of **1.5**. Margins of **54 points** top and bottom, **64 points** left and right. Paragraph indent of **18 points**, paragraph spacing of **6 points**. Orphan and widow control set to **3 lines**. Cover page, Table of Contents, and chapter page breaks all enabled.
+
+These are starting points, not rules. Adjust to suit your content and your aesthetic judgment.
+
+## Generating and Reviewing the PDF
+
+Click the **Generate PDF eBook** button. The file will download to your device within a few seconds. Open it in your preferred PDF reader — Adobe Acrobat, Preview on macOS, or any modern browser — and review it with the same attention you would give a proof copy from a printer.
+
+Check that the cover page renders cleanly. Verify that the Table of Contents lists all your chapters and headings, and that clicking an entry navigates correctly. Page through the document looking for widows — single lines stranded at the top of a page — or orphans — single lines left alone at the bottom. If you find them, adjust your orphan and widow settings and regenerate.
+
+### Distributing Your eBook
+
+A PDF ebook can be shared in any number of ways. Email it as an attachment. Upload it to a personal website or a document-sharing platform. Distribute it through a mailing list or a member portal. Because the layout is fixed, it will look identical to every reader regardless of their device or operating system.
+
+If you intend to sell your ebook, embed your name and the document title in the metadata fields — the PDF information dialog in any reader will display them. Consider adding your publisher name or website as well. These small details signal professionalism and make the document easier to identify in a reader's library of downloaded files.
+
+## A Final Word
+
+Every ebook you produce is an act of communication. The words carry the meaning; the typography, layout, and structure carry the words. When these elements work together — when the reader moves through your pages without friction, guided by clear headings, comfortable text, and a Table of Contents that genuinely maps the territory — the form disappears and only the content remains.
+
+That is the goal. That is what good ebook production makes possible.
+
+*Now open the generator, load this file, and see for yourself.*
