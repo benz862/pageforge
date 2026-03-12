@@ -296,6 +296,8 @@
       padding: 2px;
       background: var(--cream);
       cursor: pointer;
+      position: relative;
+      z-index: 10;
     }
 
     input[type="color"]:focus {
@@ -1040,6 +1042,13 @@
         <div class="field-group">
           <div class="toggle-row"><input type="checkbox" id="showPageNums" checked /><label for="showPageNums">Page
               numbers</label></div>
+          <div class="field" style="margin-top: 5px; margin-bottom: 5px;">
+            <label>Numbering Style</label>
+            <select id="pageNumStyle" class="select-field">
+              <option value="roman-arabic" selected>Roman Front, Numeric Body</option>
+              <option value="arabic-only">Numeric Everywhere</option>
+            </select>
+          </div>
           <div class="toggle-row"><input type="checkbox" id="showToc" checked /><label for="showToc">Table of
               Contents</label></div>
           <div class="toggle-row"><input type="checkbox" id="coverPage" checked /><label for="coverPage">Cover
@@ -1480,7 +1489,11 @@
         const author = g('bookAuthor').value || '';
         const publisher = g('bookPublisher').value || '';
 
+        const pageNumStyle = g('pageNumStyle') ? g('pageNumStyle').value : 'roman-arabic';
+
         const doc = new jsPDF({ orientation: isLand ? 'l' : 'p', unit: 'mm', format: [pw, ph] });
+        // Tier caps
+        const _caps = window.getActiveCaps ? window.getActiveCaps() : { maxPages: 20, watermark: true };
         doc.setProperties({ title, author, creator: 'eBook PDF Generator' });
 
         const textW = pw - mL - mR;
@@ -1498,6 +1511,7 @@
         let arabicPageNum = 0;    // counts body pages starting at chapter 1
         let romanPageNum = 0;    // counts front-matter pages
         let bodyStarted = false; // flips true when first chapter is encountered
+        let globalArabicNum = 1; // used for arabic-only numbering style
 
         function toRoman(n) {
           if (n < 1) return '';
@@ -1518,10 +1532,14 @@
           sf(bPdf, 'normal', Math.max(fontSize - 2, 6));
           doc.setTextColor(150, 150, 150);
           let label;
-          if (bodyStarted) {
-            label = String(arabicPageNum);
+          if (pageNumStyle === 'arabic-only') {
+            label = String(globalArabicNum);
           } else {
-            label = toRoman(romanPageNum);
+            if (bodyStarted) {
+              label = String(arabicPageNum);
+            } else {
+              label = toRoman(romanPageNum);
+            }
           }
           doc.text(label, pw / 2, ph - mB + 6, { align: 'center' });
           doc.setTextColor(0, 0, 0);
@@ -1533,6 +1551,9 @@
           pageNum++;
           y = mT;
           // Advance the correct counter for the NEW page we just created
+          if (pageNumStyle === 'arabic-only' && (!doCover || pageNum > 1)) {
+            globalArabicNum++;
+          }
           if (bodyStarted) {
             arabicPageNum++;
           } else {
@@ -1592,7 +1613,8 @@
             firstCh = false;
             // ensure room for chapter title + at least one line of body
             if (y + lh(chSize) * 3 > safeBottom) newPage();
-            tocEntries.push({ level: 1, text: tok.text, displayPage: String(arabicPageNum), physicalPage: pageNum });
+            let displayPage = pageNumStyle === 'arabic-only' ? String(globalArabicNum) : String(arabicPageNum);
+            tocEntries.push({ level: 1, text: tok.text, displayPage: displayPage, physicalPage: pageNum });
             sf(chPdf, 'bold', chSize); tc(chRGB);
             const chLines = doc.splitTextToSize(tok.text, textW);
             for (const l of chLines) { doc.text(l, mL, y); y += lh(chSize); }
@@ -1601,7 +1623,8 @@
 
           } else if (tok.type === 'h2') {
             if (y + lh(h2Size) * 3 > safeBottom) newPage();
-            tocEntries.push({ level: 2, text: tok.text, displayPage: bodyStarted ? String(arabicPageNum) : toRoman(romanPageNum), physicalPage: pageNum });
+            let displayPage = pageNumStyle === 'arabic-only' ? String(globalArabicNum) : (bodyStarted ? String(arabicPageNum) : toRoman(romanPageNum));
+            tocEntries.push({ level: 2, text: tok.text, displayPage: displayPage, physicalPage: pageNum });
             y += paraGap;
             sf(h2Pdf, 'bold', h2Size); tc(h2RGB);
             const h2Lines = doc.splitTextToSize(tok.text, textW);
@@ -1611,7 +1634,8 @@
 
           } else if (tok.type === 'h3') {
             if (y + lh(h3Size) * 2 > safeBottom) newPage();
-            tocEntries.push({ level: 3, text: tok.text, displayPage: bodyStarted ? String(arabicPageNum) : toRoman(romanPageNum), physicalPage: pageNum });
+            let displayPage = pageNumStyle === 'arabic-only' ? String(globalArabicNum) : (bodyStarted ? String(arabicPageNum) : toRoman(romanPageNum));
+            tocEntries.push({ level: 3, text: tok.text, displayPage: displayPage, physicalPage: pageNum });
             y += paraGap * 0.5;
             sf(h3Pdf, 'bolditalic', h3Size); tc(h3RGB);
             const h3Lines = doc.splitTextToSize(tok.text, textW);
