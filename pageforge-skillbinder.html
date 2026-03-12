@@ -2063,7 +2063,10 @@
         if (t.startsWith('|') && t.endsWith('|')) {
           flush();
           if (tableRows.length === 1 && /^\|(\s*:?-+:?\s*\|)+$/.test(t)) continue; // skip only the first alignment divider
-          const cells = t.slice(1, -1).split('|').map(s => s.trim());
+          const cells = t.slice(1, -1).split('|').map(s => {
+            const st = s.trim();
+            return /^:?-+:?$/.test(st) ? '' : st;
+          });
           tableRows.push(cells);
         } else { flushTable(); }
 
