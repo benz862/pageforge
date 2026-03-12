@@ -2581,7 +2581,7 @@
         const tblEvenBgRGB = hexToRgb(g('tblEvenBg').value);
         const tblOddBgRGB = hexToRgb(g('tblOddBg').value);
 
-        const pageNumStyle = g('pageNumStyle') ? g('pageNumStyle').value : 'roman-arabic';
+        let pageNumStyle = g('pageNumStyle') ? g('pageNumStyle').value : 'roman-arabic';
 
         const doc = new jsPDF({ orientation: isLand ? 'l' : 'p', unit: 'mm', format: [pw, ph] });
         // Tier caps
