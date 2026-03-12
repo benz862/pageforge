@@ -17,16 +17,19 @@ create table if not exists public.user_tiers (
 alter table public.user_tiers enable row level security;
 
 -- 3. Users can only read their own tier
+drop policy if exists "Users can read own tier" on public.user_tiers;
 create policy "Users can read own tier"
   on public.user_tiers for select
   using (auth.uid() = user_id);
 
 -- 4. Only service role can write (webhook updates tiers)
+drop policy if exists "Service role can manage tiers" on public.user_tiers;
 create policy "Service role can manage tiers"
   on public.user_tiers for all
   using (auth.role() = 'service_role');
 
 -- 5. Allow users to insert their own free record on signup
+drop policy if exists "Users can insert own free tier" on public.user_tiers;
 create policy "Users can insert own free tier"
   on public.user_tiers for insert
   with check (auth.uid() = user_id and tier = 'free');

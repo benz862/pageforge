@@ -14,10 +14,12 @@ CREATE TABLE IF NOT EXISTS public.teams (
 
 ALTER TABLE public.teams ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Team owners can manage their team" ON public.teams;
 CREATE POLICY "Team owners can manage their team"
   ON public.teams FOR ALL
   USING (auth.uid() = owner_id);
 
+DROP POLICY IF EXISTS "Team members can view their team" ON public.teams;
 CREATE POLICY "Team members can view their team"
   ON public.teams FOR SELECT
   USING (
@@ -40,6 +42,7 @@ CREATE TABLE IF NOT EXISTS public.team_members (
 
 ALTER TABLE public.team_members ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Team owners can manage members" ON public.team_members;
 CREATE POLICY "Team owners can manage members"
   ON public.team_members FOR ALL
   USING (
@@ -49,6 +52,7 @@ CREATE POLICY "Team owners can manage members"
     )
   );
 
+DROP POLICY IF EXISTS "Members can view other members in their team" ON public.team_members;
 CREATE POLICY "Members can view other members in their team"
   ON public.team_members FOR SELECT
   USING (
