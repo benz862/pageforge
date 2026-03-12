@@ -1002,6 +1002,28 @@
       font-size: 0.66rem;
     }
 
+    #previewPane table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1.5em;
+      margin-bottom: 2em;
+      font-size: 0.9em;
+      page-break-inside: avoid;
+    }
+
+    #previewPane th {
+      background-color: var(--navy);
+      color: white;
+      border: 1px solid var(--rule);
+      padding: 8px;
+      text-align: center;
+    }
+
+    #previewPane td {
+      border: 1px solid var(--rule);
+      padding: 8px;
+    }
+
     /* ── MAIN AREA ── */
     .main {
       display: grid;
@@ -1608,6 +1630,41 @@
             </div>
           </div>
 
+          <hr style="border:none;border-top:1px solid var(--rule);margin:0.1rem 0;" />
+
+          <!-- TABLE TEXT -->
+          <div>
+            <div
+              style="font-size:0.62rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#999;margin-bottom:0.3rem;">
+              Data Tables</div>
+            <div class="font-color-row">
+              <div class="field">
+                <label>Font</label>
+                <select id="tblFont">
+                  <option value="same">— same as body —</option>
+                  <option value="times">Times New Roman</option>
+                  <option value="helvetica">Helvetica / Arial</option>
+                  <option value="garamond" data-gf="EB Garamond">EB Garamond</option>
+                  <option value="inter" data-gf="Inter">Inter</option>
+                  <option value="lora" data-gf="Lora">Lora</option>
+                  <option value="merriweather" data-gf="Merriweather">Merriweather</option>
+                  <option value="playfair" data-gf="Playfair Display">Playfair Display</option>
+                  <option value="sourcesans" data-gf="Source Sans 3">Source Sans 3</option>
+                  <option value="baskerville" data-gf="Libre Baskerville">Libre Baskerville</option>
+                  <option value="crimson" data-gf="Crimson Pro">Crimson Pro</option>
+                </select>
+              </div>
+              <div class="color-swatch-wrap">
+                <span>Colour</span>
+                <input type="color" id="tblColor" value="#333333" />
+              </div>
+            </div>
+            <div class="field" style="margin-top:0.35rem;">
+              <label>Size (pt)</label>
+              <input type="number" id="tblSize" value="10" min="6" max="24" />
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -2127,13 +2184,16 @@
       const h2Info = h2k === 'same' ? bInfo : (FONT_MAP[h2k] || bInfo);
       const h3k = g('h3Font').value;
       const h3Info = h3k === 'same' ? bInfo : (FONT_MAP[h3k] || bInfo);
+      const tblk = g('tblFont').value;
+      const tblInfo = tblk === 'same' ? bInfo : (FONT_MAP[tblk] || bInfo);
 
       return {
-        bInfo, chInfo, h2Info, h3Info,
+        bInfo, chInfo, h2Info, h3Info, tblInfo,
         bodyColor: g('bodyColor').value,
         chColor: g('chColor').value,
         h2Color: g('h2Color').value,
         h3Color: g('h3Color').value,
+        tblColor: g('tblColor').value,
       };
     }
 
@@ -2158,11 +2218,11 @@
       styleEl.textContent = `
     #previewPane, #previewPane p,
     #previewPane .preview-bullet { font-family: ${s.bInfo.css} !important; color: ${s.bodyColor} !important; }
-    #previewPane .preview-title,
-    #previewPane .preview-ch         { font-family: ${s.chInfo.css} !important; color: ${s.chColor} !important; }
-    #previewPane .preview-author     { font-family: ${s.bInfo.css} !important; color: ${s.h2Color} !important; }
-    #previewPane .preview-h2         { font-family: ${s.h2Info.css} !important; color: ${s.h2Color} !important; }
-    #previewPane .preview-h3         { font-family: ${s.h3Info.css} !important; color: ${s.h3Color} !important; }
+    #previewPane .preview-ch { font-family: ${s.chInfo.css} !important; color: ${s.chColor} !important; }
+    #previewPane .preview-h2 { font-family: ${s.h2Info.css} !important; color: ${s.h2Color} !important; }
+    #previewPane .preview-h3 { font-family: ${s.h3Info.css} !important; color: ${s.h3Color} !important; }
+    #previewPane table td { font-family: ${s.tblInfo.css} !important; color: ${s.tblColor} !important; }
+    #previewPane table th { font-family: ${s.tblInfo.css} !important; color: white !important; }
   `;
 
       const title = document.getElementById('bookTitle').value;
@@ -2256,23 +2316,27 @@
         const chKey = g('chFont').value === 'same' ? bKey : g('chFont').value;
         const h2Key = g('h2Font').value === 'same' ? bKey : g('h2Font').value;
         const h3Key = g('h3Font').value === 'same' ? bKey : g('h3Font').value;
+        const tblKey = g('tblFont').value === 'same' ? bKey : g('tblFont').value;
 
         const bPdf = FONT_MAP[bKey]?.pdf || 'times';
         const chPdf = FONT_MAP[chKey]?.pdf || bPdf;
         const h2Pdf = FONT_MAP[h2Key]?.pdf || bPdf;
         const h3Pdf = FONT_MAP[h3Key]?.pdf || bPdf;
+        const tblPdf = FONT_MAP[tblKey]?.pdf || bPdf;
 
         // Colours
         const bodyRGB = hexToRgb(g('bodyColor').value);
         const chRGB = hexToRgb(g('chColor').value);
         const h2RGB = hexToRgb(g('h2Color').value);
         const h3RGB = hexToRgb(g('h3Color').value);
+        const tblRGB = hexToRgb(g('tblColor').value);
 
         const fontSize = +g('fontSize').value;
         const lineH = +g('lineHeight').value;
         const chSize = +g('chSize').value;
         const h2Size = +g('h2Size').value;
         const h3Size = +g('h3Size').value;
+        const tblSize = +g('tblSize').value;
         const doToc = g('showToc').checked;
         const doCover = g('coverPage').checked;
         const doNums = g('showPageNums').checked;
@@ -2520,7 +2584,7 @@
               const cellPadY = 1.8;
               const tableW = textW - indent;
               const colW = tableW / colCount;
-              sf(bPdf, 'normal', fontSize);
+              sf(tblPdf, 'normal', tblSize);
 
               for (let ri = 0; ri < rows.length; ri++) {
                 const isHeader = ri === 0;
@@ -2529,16 +2593,16 @@
                 let maxLines = 1;
                 for (let ci = 0; ci < colCount; ci++) {
                   const cellText = rows[ri][ci] || '';
-                  sf(bPdf, isHeader ? 'bold' : 'normal', fontSize);
+                  sf(tblPdf, isHeader ? 'bold' : 'normal', tblSize);
                   const wrapped = doc.splitTextToSize(cellText, colW - cellPadX * 2);
                   wrappedCells.push(wrapped);
                   if (wrapped.length > maxLines) maxLines = wrapped.length;
                 }
-                const rowH = maxLines * lh(fontSize) + cellPadY * 2;
+                const rowH = maxLines * lh(tblSize) + cellPadY * 2;
 
                 if (y + rowH > safeBottom) newPage();
 
-                const rowTop = y - lh(fontSize) + cellPadY;
+                const rowTop = y - lh(tblSize) + cellPadY;
                 for (let ci = 0; ci < colCount; ci++) {
                   const cx = mL + indent + ci * colW;
                   // Background
@@ -2556,11 +2620,15 @@
                   doc.setDrawColor(180, 190, 200); doc.setLineWidth(0.25);
                   doc.rect(cx, rowTop, colW, rowH);
                   // Text — each wrapped line
-                  if (isHeader) { sf(bPdf, 'bold', fontSize); doc.setTextColor(255, 255, 255); }
-                  else { sf(bPdf, 'normal', fontSize); tc(bodyRGB); }
+                  if (isHeader) { sf(tblPdf, 'bold', tblSize); doc.setTextColor(255, 255, 255); }
+                  else { sf(tblPdf, 'normal', tblSize); doc.setTextColor(tblRGB[0], tblRGB[1], tblRGB[2]); }
                   const lines = wrappedCells[ci];
                   for (let li = 0; li < lines.length; li++) {
-                    doc.text(lines[li], cx + cellPadX, rowTop + cellPadY + lh(fontSize) * 0.82 + li * lh(fontSize));
+                    if (isHeader) {
+                      doc.text(lines[li], cx + (colW / 2), rowTop + cellPadY + lh(tblSize) * 0.82 + li * lh(tblSize), { align: 'center' });
+                    } else {
+                      doc.text(lines[li], cx + cellPadX, rowTop + cellPadY + lh(tblSize) * 0.82 + li * lh(tblSize));
+                    }
                   }
                 }
                 y += rowH;
