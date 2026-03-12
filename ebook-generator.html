@@ -1036,7 +1036,7 @@
                 <select id="tblFont">
                   <option value="same">— same as body —</option>
                   <option value="times">Times New Roman</option>
-                  <option value="helvetica">Helvetica / Arial</option>
+                  <option value="helvetica" selected>Helvetica / Arial</option>
                   <option value="garamond" data-gf="EB Garamond">EB Garamond</option>
                   <option value="inter" data-gf="Inter">Inter</option>
                   <option value="lora" data-gf="Lora">Lora</option>
@@ -1048,13 +1048,52 @@
                 </select>
               </div>
               <div class="color-swatch-wrap">
-                <span>Colour</span>
+                <span>Text</span>
                 <input type="color" id="tblColor" value="#333333" />
               </div>
             </div>
             <div class="field" style="margin-top:0.35rem;">
               <label>Size (pt)</label>
               <input type="number" id="tblSize" value="10" min="6" max="24" />
+            </div>
+
+            <!-- Alignment -->
+            <div class="row-2" style="margin-top:0.6rem;">
+              <div class="field">
+                <label>Header Align</label>
+                <select id="tblHeadAlign">
+                  <option value="left">Left</option>
+                  <option value="center" selected>Center</option>
+                  <option value="right">Right</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Body Align</label>
+                <select id="tblBodyAlign">
+                  <option value="left" selected>Left</option>
+                  <option value="center">Center</option>
+                  <option value="right">Right</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Background Colors -->
+            <div class="field" style="margin-top:0.6rem;">
+              <label>Backgrounds</label>
+              <div style="display:flex; gap:0.5rem; justify-content:space-between;">
+                <div class="color-swatch-wrap" style="flex:1;">
+                  <span style="font-size:0.6rem;">Header</span>
+                  <input type="color" id="tblHeadBg" value="#1d3a52" />
+                </div>
+                <div class="color-swatch-wrap" style="flex:1;">
+                  <span style="font-size:0.6rem;">Row 1</span>
+                  <input type="color" id="tblEvenBg" value="#f7f9fc" />
+                </div>
+                <div class="color-swatch-wrap" style="flex:1;">
+                  <span style="font-size:0.6rem;">Row 2</span>
+                  <input type="color" id="tblOddBg" value="#ffffff" />
+                </div>
+              </div>
             </div>
           </div>
 
@@ -1512,6 +1551,11 @@
         h2Color: g('h2Color').value,
         h3Color: g('h3Color').value,
         tblColor: g('tblColor').value,
+        tblHeadAlign: g('tblHeadAlign').value,
+        tblBodyAlign: g('tblBodyAlign').value,
+        tblHeadBg: g('tblHeadBg').value,
+        tblEvenBg: g('tblEvenBg').value,
+        tblOddBg: g('tblOddBg').value,
       };
     }
 
@@ -1541,8 +1585,10 @@
     #previewPane .preview-author     { font-family: ${s.bInfo.css} !important; color: ${s.h2Color} !important; }
     #previewPane .preview-h2         { font-family: ${s.h2Info.css} !important; color: ${s.h2Color} !important; }
     #previewPane .preview-h3         { font-family: ${s.h3Info.css} !important; color: ${s.h3Color} !important; }
-    #previewPane table td { font-family: ${s.tblInfo.css} !important; color: ${s.tblColor} !important; }
-    #previewPane table th { font-family: ${s.tblInfo.css} !important; color: white !important; }
+    #previewPane table td { font-family: ${s.tblInfo.css} !important; color: ${s.tblColor} !important; text-align: ${s.tblBodyAlign} !important; }
+    #previewPane table th { font-family: ${s.tblInfo.css} !important; color: white !important; text-align: ${s.tblHeadAlign} !important; background-color: ${s.tblHeadBg} !important; }
+    #previewPane table tr:nth-child(even) td { background-color: ${s.tblEvenBg} !important; }
+    #previewPane table tr:nth-child(odd) td { background-color: ${s.tblOddBg} !important; }
   `;
 
       const title = document.getElementById('bookTitle').value;
@@ -1579,6 +1625,7 @@
 
     // Live-update preview on any font/colour change
     ['bodyFont', 'chFont', 'h2Font', 'h3Font', 'bodyColor', 'chColor', 'h2Color', 'h3Color',
+      'tblFont', 'tblColor', 'tblSize', 'tblHeadAlign', 'tblBodyAlign', 'tblHeadBg', 'tblEvenBg', 'tblOddBg',
       'bookTitle', 'bookAuthor'].forEach(id => {
         const el = document.getElementById(id);
         if (el) {
@@ -1637,6 +1684,12 @@
         const title = g('bookTitle').value || 'Untitled';
         const author = g('bookAuthor').value || '';
         const publisher = g('bookPublisher').value || '';
+
+        const tblHeadAlign = g('tblHeadAlign').value;
+        const tblBodyAlign = g('tblBodyAlign').value;
+        const tblHeadBgRGB = hexToRgb(g('tblHeadBg').value);
+        const tblEvenBgRGB = hexToRgb(g('tblEvenBg').value);
+        const tblOddBgRGB = hexToRgb(g('tblOddBg').value);
 
         const pageNumStyle = g('pageNumStyle') ? g('pageNumStyle').value : 'roman-arabic';
 
@@ -1855,13 +1908,13 @@
                   const cx = mL + indent + ci * colW;
                   // Background
                   if (isHeader) {
-                    doc.setFillColor(29, 58, 82);
+                    doc.setFillColor(tblHeadBgRGB[0], tblHeadBgRGB[1], tblHeadBgRGB[2]);
                     doc.rect(cx, rowTop, colW, rowH, 'F');
-                  } else if (ri % 2 === 0) {
-                    doc.setFillColor(247, 249, 252);
+                  } else if (ri % 2 === 0) { // Since ri=0 is header, ri=1 is odd, ri=2 is even visual row
+                    doc.setFillColor(tblOddBgRGB[0], tblOddBgRGB[1], tblOddBgRGB[2]);
                     doc.rect(cx, rowTop, colW, rowH, 'F');
                   } else {
-                    doc.setFillColor(255, 255, 255);
+                    doc.setFillColor(tblEvenBgRGB[0], tblEvenBgRGB[1], tblEvenBgRGB[2]);
                     doc.rect(cx, rowTop, colW, rowH, 'F');
                   }
                   // Border
@@ -1872,11 +1925,19 @@
                   else { sf(tblPdf, 'normal', tblSize); doc.setTextColor(tblRGB[0], tblRGB[1], tblRGB[2]); }
                   const lines = wrappedCells[ci];
                   for (let li = 0; li < lines.length; li++) {
-                    if (isHeader) {
-                      doc.text(lines[li], cx + (colW / 2), rowTop + cellPadY + lh(tblSize) * 0.82 + li * lh(tblSize), { align: 'center' });
-                    } else {
-                      doc.text(lines[li], cx + cellPadX, rowTop + cellPadY + lh(tblSize) * 0.82 + li * lh(tblSize));
+                    let drawX = cx + cellPadX;
+                    let align = 'left';
+                    const activeAlign = isHeader ? tblHeadAlign : tblBodyAlign;
+
+                    if (activeAlign === 'center') {
+                      drawX = cx + (colW / 2);
+                      align = 'center';
+                    } else if (activeAlign === 'right') {
+                      drawX = cx + colW - cellPadX;
+                      align = 'right';
                     }
+
+                    doc.text(lines[li], drawX, rowTop + cellPadY + lh(tblSize) * 0.82 + li * lh(tblSize), { align: align });
                   }
                 }
                 y += rowH;
