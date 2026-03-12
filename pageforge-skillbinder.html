@@ -1845,6 +1845,10 @@
             style="width:100%;background:var(--navy);color:#fff;border:none;border-radius:5px;padding:0.45rem;font-size:0.75rem;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;margin-bottom:0.6rem;transition:background 0.18s;">
             + Save Current Build
           </button>
+          <button onclick="batchExportSelected()" id="batchExportBtn"
+            style="display:none;width:100%;background:var(--gold);color:#fff;border:none;border-radius:5px;padding:0.45rem;font-size:0.75rem;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;margin-bottom:0.6rem;transition:background 0.18s;">
+            ↓ Batch Export Selected
+          </button>
           <div id="buildsList" style="display:flex;flex-direction:column;gap:0.4rem;max-height:200px;overflow-y:auto;">
             <div style="font-size:0.72rem;color:var(--muted);text-align:center;padding:0.8rem 0;">
               Sign in to save builds
@@ -1876,10 +1880,31 @@
         <button class="btn-upload" onclick="document.getElementById('fileInput').click()">↑ Load File</button>
         <button class="btn-paste" onclick="openPasteModal()">⌘ Paste Text</button>
         <button class="btn-clear" onclick="clearContent()">Clear</button>
+        <button class="btn-find" onclick="toggleFindReplace()"
+          style="margin-left:0.5rem; background:none; border:1px solid rgba(255,255,255,0.2); color:#fff; border-radius:4px; padding:0.3rem 0.6rem; cursor:pointer; font-size:0.8rem; font-family:'Inter',sans-serif;"
+          id="findReplaceToggleBtn">🔍 Find & Replace</button>
         <input type="file" id="fileInput" accept=".txt,.rtf,.md" style="display:none" onchange="loadFile(event)" />
         <div class="syntax-hint">← editor &nbsp;|&nbsp; preview →</div>
       </div>
       <div class="editor-area">
+        <div id="findReplaceBar"
+          style="display:none; background:#f1f5f9; padding:0.4rem; border-bottom:1px solid #e2e8f0; align-items:center; gap:0.5rem; font-size:0.75rem;">
+          <input type="text" id="findInput" placeholder="Find..."
+            style="padding:0.2rem 0.4rem; border:1px solid #cbd5e1; border-radius:3px; outline:none;" />
+          <input type="text" id="replaceInput" placeholder="Replace with..."
+            style="padding:0.2rem 0.4rem; border:1px solid #cbd5e1; border-radius:3px; outline:none;" />
+          <button onclick="findNext()"
+            style="padding:0.2rem 0.5rem; background:#fff; border:1px solid #cbd5e1; border-radius:3px; cursor:pointer;">Find
+            Next</button>
+          <button onclick="replaceCurrent()"
+            style="padding:0.2rem 0.5rem; background:#fff; border:1px solid #cbd5e1; border-radius:3px; cursor:pointer;">Replace</button>
+          <button onclick="replaceAll()"
+            style="padding:0.2rem 0.5rem; background:#fff; border:1px solid #cbd5e1; border-radius:3px; cursor:pointer;">Replace
+            All</button>
+          <span id="findMatches" style="color:#64748b; margin-left:auto;"></span>
+          <button onclick="toggleFindReplace()"
+            style="background:none; border:none; font-size:1rem; cursor:pointer; color:#64748b;">✕</button>
+        </div>
         <textarea id="content" spellcheck="false" oninput="updatePreview()"
           placeholder="Type or paste your content here…"></textarea>
         <div class="preview-pane" id="previewPane">
@@ -2070,6 +2095,108 @@
       r.readAsText(f);
     }
     function clearContent() { document.getElementById('content').value = ''; updatePreview(); }
+
+    // --- FIND & REPLACE LOGIC ---
+    let currentFindIndex = -1;
+    let findMatchesList = [];
+
+    function toggleFindReplace() {
+      const bar = document.getElementById('findReplaceBar');
+      if (bar.style.display === 'none') {
+        bar.style.display = 'flex';
+        document.getElementById('findInput').focus();
+      } else {
+        bar.style.display = 'none';
+        document.getElementById('content').focus();
+        document.getElementById('findMatches').textContent = '';
+      }
+    }
+
+    function doFind() {
+      const ta = document.getElementById('content');
+      const term = document.getElementById('findInput').value.toLowerCase();
+      const text = ta.value.toLowerCase();
+      findMatchesList = [];
+      if (!term) {
+        document.getElementById('findMatches').textContent = '';
+        return;
+      }
+      let idx = text.indexOf(term);
+      while (idx !== -1) {
+        findMatchesList.push(idx);
+        idx = text.indexOf(term, idx + 1);
+      }
+      if (findMatchesList.length > 0) {
+        const cursor = ta.selectionStart || 0;
+        currentFindIndex = findMatchesList.findIndex(i => i >= cursor);
+        if (currentFindIndex === -1) currentFindIndex = 0;
+        highlightCurrentMatch();
+      } else {
+        document.getElementById('findMatches').textContent = '0/0';
+        currentFindIndex = -1;
+      }
+    }
+
+    function findNext() {
+      if (findMatchesList.length === 0) doFind();
+      else {
+        currentFindIndex = (currentFindIndex + 1) % findMatchesList.length;
+        highlightCurrentMatch();
+      }
+    }
+
+    function highlightCurrentMatch() {
+      if (currentFindIndex >= 0 && currentFindIndex < findMatchesList.length) {
+        const ta = document.getElementById('content');
+        const termLen = document.getElementById('findInput').value.length;
+        const start = findMatchesList[currentFindIndex];
+        ta.focus();
+        ta.setSelectionRange(start, start + termLen);
+        document.getElementById('findMatches').textContent = `${currentFindIndex + 1}/${findMatchesList.length}`;
+      }
+    }
+
+    function replaceCurrent() {
+      if (currentFindIndex >= 0 && currentFindIndex < findMatchesList.length) {
+        const ta = document.getElementById('content');
+        const termLen = document.getElementById('findInput').value.length;
+        const start = ta.selectionStart;
+        const end = ta.selectionEnd;
+        if (ta.value.substring(start, end).toLowerCase() === document.getElementById('findInput').value.toLowerCase()) {
+          const rep = document.getElementById('replaceInput').value;
+          ta.setRangeText(rep, start, end, 'end');
+          updatePreview();
+          doFind();
+        } else {
+          doFind();
+        }
+      } else {
+        doFind();
+      }
+    }
+
+    function replaceAll() {
+      const ta = document.getElementById('content');
+      const term = document.getElementById('findInput').value;
+      const rep = document.getElementById('replaceInput').value;
+      if (!term) return;
+      const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const re = new RegExp(escapeRegExp(term), 'gi');
+      const beforeStr = ta.value;
+      const afterStr = beforeStr.replace(re, rep);
+      if (beforeStr !== afterStr) {
+        ta.value = afterStr;
+        updatePreview();
+        doFind();
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('findInput')?.addEventListener('input', doFind);
+      document.getElementById('findInput')?.addEventListener('keydown', e => { if (e.key === 'Enter') findNext(); });
+      document.getElementById('replaceInput')?.addEventListener('keydown', e => { if (e.key === 'Enter') replaceCurrent(); });
+    });
+    // ---------------------------
 
     // ─── PARSING ──────────────────────────────────────────────────────────────────
     function parseContent(raw) {
@@ -3344,6 +3471,46 @@ The learner who masters:
   </div>
 
   <!-- ═══════════════════════════════════════════════════════════
+     TEAM MANAGEMENT MODAL
+═══════════════════════════════════════════════════════════ -->
+  <div class="pf-overlay hidden" id="teamOverlay">
+    <div class="auth-modal" style="max-width: 500px; height: auto;">
+      <div class="auth-modal-header">
+        <h2>Manage Team</h2>
+        <p>Invite members to share your Publisher tier benefits.</p>
+      </div>
+      <div class="auth-form" style="padding-top: 1rem;">
+        <div class="auth-field" style="display:flex; gap:0.5rem; align-items:flex-end;">
+          <div style="flex:1;">
+            <label>Invite by Email</label>
+            <input type="email" id="teamInviteEmail" placeholder="colleague@example.com" />
+          </div>
+          <button class="btn-auth-submit" style="width:auto; margin-top:0; padding: 0.75rem 1.5rem;"
+            onclick="inviteTeamMember()" id="btnInviteMember">Invite</button>
+        </div>
+        <div class="auth-error" id="teamError" style="margin-top:0.5rem;"></div>
+        <div class="auth-success" id="teamSuccess"
+          style="color:var(--green);font-size:0.8rem;text-align:center;margin-top:0.5rem;display:none;"></div>
+
+        <div style="margin-top: 2rem;">
+          <h3
+            style="font-size: 0.9rem; margin-bottom: 0.8rem; color: var(--navy-deep); border-bottom: 1px solid #e2e8f0; padding-bottom: 0.4rem;">
+            Current Members</h3>
+          <div id="teamMembersList"
+            style="border: 1px solid rgba(0,0,0,0.05); background: #fafafa; border-radius: 5px; padding: 0.5rem; max-height: 200px; overflow-y: auto;">
+            <!-- Render members here -->
+            <div style="font-size:0.8rem; color:#666; text-align:center; padding:1rem;">Loading...</div>
+          </div>
+        </div>
+      </div>
+      <div style="padding: 1rem 2rem 2rem; text-align: center;">
+        <button class="btn-hero-ghost" onclick="closeTeamModal()"
+          style="padding: 0.4rem 1rem; font-size: 0.8rem;">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
      PRICING MODAL
 ═══════════════════════════════════════════════════════════ -->
   <div class="pf-overlay hidden" id="pricingOverlay">
@@ -3423,8 +3590,9 @@ The learner who masters:
       <!-- Publisher note -->
       <div style="text-align:center;padding:0 1.5rem 1.5rem;font-size:0.8rem;color:#666;">
         Need team seats, batch export, or white-labelling?
-        <a href="/cdn-cgi/l/email-protection#442c2128282b04372f2d2828262d2a2021366a272b29"
-          style="color:var(--navy);font-weight:600;">Contact us about Publisher — $49/mo</a>
+        <button onclick="selectPlan('publisher')"
+          style="background:none;border:none;color:var(--navy);font-weight:600;cursor:pointer;font-family:inherit;font-size:inherit;padding:0;text-decoration:underline;">Upgrade
+          to Publisher — $49/mo</button>
       </div>
     </div>
   </div>
@@ -3512,14 +3680,25 @@ The learner who masters:
     async function loadUserTier() {
       if (!currentUser) return;
       try {
+        // Fetch base tier and profile info
         const { data, error } = await sbClient
           .from('user_tiers')
           .select('tier, first_name')
           .eq('user_id', currentUser.id)
           .single();
+
         if (data && !error) {
-          currentTier = data.tier || 'free';
           currentUserFirstName = data.first_name || '';
+          currentTier = data.tier || 'free';
+
+          // Check for team inheritance if not already publisher
+          if (currentTier !== 'publisher') {
+            const { data: effTier, error: effError } = await sbClient
+              .rpc('get_effective_tier', { user_uuid: currentUser.id });
+            if (effTier && !effError) {
+              currentTier = effTier;
+            }
+          }
         } else {
           // First login — create free tier record
           await sbClient.from('user_tiers').upsert({ user_id: currentUser.id, tier: 'free' });
@@ -3619,10 +3798,14 @@ The learner who masters:
         const upgrade = currentTier === 'free' || currentTier === 'starter'
           ? `<button class="btn-upgrade" onclick="openPricing()">⬆ Upgrade</button>` : '';
 
+        const teamBtn = currentTier === 'publisher'
+          ? `<button class="btn-signout" onclick="openTeamModal()">Team</button>` : '';
+
         el.innerHTML = `
       <div class="user-badge" style="display:flex; align-items:center; gap:0.6rem;">
         ${limitText}
         <span style="margin-right:0.25rem;">Welcome, <strong style="color:#fff;">${short}</strong></span>
+        ${teamBtn}
         <button class="btn-signout" onclick="signOut()">Sign Out</button>
         ${upgrade}
       </div>`;
@@ -3782,7 +3965,7 @@ The learner who masters:
     async function signOut() {
       if (!sbClient) return;
       await sbClient.auth.signOut();
-      window.location.reload();
+      window.location.href = 'index.html';
     }
 
     // ── PRICING MODAL ────────────────────────────────────────────────────────────
@@ -3855,6 +4038,110 @@ The learner who masters:
       }
     }
 
+    // ── TEAM MODAL ───────────────────────────────────────────────────────────────
+    function openTeamModal() {
+      document.getElementById('teamOverlay').classList.remove('hidden');
+      loadTeamMembers();
+    }
+    function closeTeamModal() {
+      document.getElementById('teamOverlay').classList.add('hidden');
+      document.getElementById('teamError').textContent = '';
+      document.getElementById('teamSuccess').style.display = 'none';
+      document.getElementById('teamInviteEmail').value = '';
+    }
+    document.getElementById('teamOverlay').addEventListener('click', e => {
+      if (e.target === document.getElementById('teamOverlay')) closeTeamModal();
+    });
+
+    async function loadTeamMembers() {
+      const listEl = document.getElementById('teamMembersList');
+      if (!sbClient || !currentUser) return;
+      listEl.innerHTML = '<div style="font-size:0.8rem; color:#666; text-align:center; padding:1rem;">Loading...</div>';
+
+      try {
+        const { data: teamData, error: teamErr } = await sbClient.from('teams').select('id').eq('owner_id', currentUser.id).single();
+        if (teamErr || !teamData) {
+          listEl.innerHTML = '<div style="font-size:0.8rem; color:#666; text-align:center; padding:1rem;">No team found. Upgrade to Publisher.</div>';
+          return;
+        }
+
+        const { data: members, error: memErr } = await sbClient.from('team_members').select('*').eq('team_id', teamData.id);
+
+        if (memErr) throw memErr;
+
+        if (!members || members.length === 0) {
+          listEl.innerHTML = '<div style="font-size:0.8rem; color:#666; text-align:center; padding:1rem;">No members invited yet.</div>';
+          return;
+        }
+
+        let html = '';
+        members.forEach(m => {
+          html += `
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:0.5rem; border-bottom:1px solid rgba(0,0,0,0.05);">
+              <span style="font-size:0.85rem;">${m.email}</span>
+              <button onclick="removeTeamMember('${m.id}')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:0.75rem;">Remove</button>
+            </div>
+          `;
+        });
+        listEl.innerHTML = html;
+      } catch (e) {
+        listEl.innerHTML = '<div style="font-size:0.8rem; color:var(--red); text-align:center; padding:1rem;">Error loading members.</div>';
+      }
+    }
+
+    async function inviteTeamMember() {
+      const email = document.getElementById('teamInviteEmail').value.trim();
+      const errEl = document.getElementById('teamError');
+      const succEl = document.getElementById('teamSuccess');
+      errEl.textContent = '';
+      succEl.style.display = 'none';
+
+      if (!email) {
+        errEl.textContent = 'Please enter an email address.';
+        errEl.classList.add('show');
+        return;
+      }
+
+      try {
+        const { data: teamData, error: teamErr } = await sbClient.from('teams').select('id').eq('owner_id', currentUser.id).single();
+        if (teamErr || !teamData) {
+          errEl.textContent = 'Team not found. You must be the Publisher owner.'; errEl.classList.add('show'); return;
+        }
+
+        const { error } = await sbClient.from('team_members').insert({
+          team_id: teamData.id,
+          email: email
+        });
+
+        if (error) {
+          if (error.code === '23505') {
+            errEl.textContent = 'User already invited.';
+          } else {
+            errEl.textContent = 'Failed to invite user.';
+          }
+          errEl.classList.add('show');
+        } else {
+          document.getElementById('teamInviteEmail').value = '';
+          succEl.textContent = 'Invitation added successfully!';
+          succEl.style.display = 'block';
+          loadTeamMembers();
+        }
+      } catch (e) {
+        errEl.textContent = 'An error occurred.';
+        errEl.classList.add('show');
+      }
+    }
+
+    async function removeTeamMember(memberId) {
+      if (!confirm('Are you sure you want to remove this member?')) return;
+      try {
+        await sbClient.from('team_members').delete().eq('id', memberId);
+        loadTeamMembers();
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
     // ── TIER ENFORCEMENT IN PDF BUILD ────────────────────────────────────────────
     // ══════════════════════════════════════════════════════════════════════════════
     // SAVES & TEMPLATES
@@ -3917,6 +4204,10 @@ The learner who masters:
       const badge = document.getElementById('buildLimitBadge');
       if (badge) badge.textContent = limit >= 9999 ? 'Unlimited' : `${data.length}/${limit} builds`;
 
+      const isPublisher = currentTier === 'publisher';
+      const batchBtn = document.getElementById('batchExportBtn');
+      if (batchBtn) batchBtn.style.display = (isPublisher && data.length > 0) ? 'block' : 'none';
+
       if (!data.length) {
         list.innerHTML = '<div style="font-size:0.72rem;color:var(--muted);text-align:center;padding:0.8rem 0;">No saved builds yet</div>';
         return;
@@ -3924,6 +4215,7 @@ The learner who masters:
 
       list.innerHTML = data.map(b => `
     <div style="background:#f8fafc;border:1px solid var(--rule);border-radius:6px;padding:0.5rem 0.65rem;display:flex;align-items:center;justify-content:space-between;gap:0.4rem;">
+      ${isPublisher ? `<input type="checkbox" class="batch-cb" value="${b.id}" style="accent-color:var(--navy);cursor:pointer;width:14px;height:14px;" />` : ''}
       <div style="flex:1;min-width:0;">
         <div style="font-size:0.76rem;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${b.title}</div>
         <div style="font-size:0.62rem;color:var(--muted);">${formatSaveDate(b.updated_at)}${b.page_count ? ' · ' + b.page_count + 'pp' : ''}</div>
@@ -4033,6 +4325,49 @@ The learner who masters:
       if (error) { showToast('Delete failed', 'error'); return; }
       showToast('Build deleted');
       await loadBuilds();
+    }
+
+    async function batchExportSelected() {
+      if (currentTier !== 'publisher') return;
+
+      const checkboxes = document.querySelectorAll('.batch-cb:checked');
+      if (checkboxes.length === 0) {
+        showToast('Please select at least one document.', 'error');
+        return;
+      }
+
+      const ids = Array.from(checkboxes).map(cb => cb.value);
+
+      setStatus(`Batch Exporting ${ids.length} document(s)...`);
+      const btn = document.getElementById('batchExportBtn');
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Exporting...';
+      }
+
+      let successCount = 0;
+      for (const id of ids) {
+        try {
+          await loadBuild(id);
+          // Small delay to allow DOM/Preview to settle
+          await new Promise(r => setTimeout(r, 600));
+          await window.buildPDF('download');
+          successCount++;
+          // Stagger downloads slightly to prevent browser blocking
+          await new Promise(r => setTimeout(r, 800));
+        } catch (e) {
+          console.error('Batch export failed for id', id, e);
+        }
+      }
+
+      setStatus(`Ready`);
+      showToast(`Batch exported ${successCount} document(s).`);
+
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '↓ Batch Export Selected';
+      }
+      document.querySelectorAll('.batch-cb').forEach(cb => cb.checked = false);
     }
 
     // ── TEMPLATES ─────────────────────────────────────────────────────────────────
