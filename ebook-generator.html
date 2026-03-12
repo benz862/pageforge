@@ -1919,7 +1919,7 @@
               y += lh(chSize) + 5;
               newPage(); // reserve page for TOC
             }
-            return; // Exit iteration so Table of Contents can be rendered later
+            continue; // Exit iteration so Table of Contents can be rendered later
 
           } else if (tok.type === 'bullet') {
             const bulletX = mL + indent + 3;
