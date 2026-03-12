@@ -2045,7 +2045,7 @@
           if (!word) {
             // If it's an empty string from split, it means there was multiple spaces. Add space width.
             if (curW > 0 && curW + spW <= maxW) {
-              curLine.push({ text: ' ', bold: false, italic: false, underline: false });
+              curLine.push({ text: ' ', bold: seg.bold, italic: seg.italic, underline: seg.underline });
               curW += spW;
             }
             continue;
@@ -2062,7 +2062,7 @@
 
           // If we aren't at the start of a line, we need to push an unformatted space first
           if (curW > 0) {
-            curLine.push({ text: ' ', bold: false, italic: false, underline: false });
+            curLine.push({ text: ' ', bold: seg.bold, italic: seg.italic, underline: seg.underline });
             curW += spW;
           }
 

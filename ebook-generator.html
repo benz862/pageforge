@@ -1347,21 +1347,43 @@
       const spW = doc.getStringUnitWidth(' ') * baseSz * 0.352778;
 
       for (const seg of segments) {
+        if (seg.blank) {
+          // Treat fill-in blank as a single non-breaking token
+          const blankW = (seg.blankLen || 8) * baseSz * 0.352778 * 0.48;
+          if (curW > 0 && curW + blankW > maxW) { lines.push(curLine); curLine = []; curW = 0; }
+          curLine.push({ ...seg });
+          curW += blankW;
+          continue;
+        }
         const words = seg.text.split(' ');
         for (let wi = 0; wi < words.length; wi++) {
           const word = words[wi];
-          if (!word) continue;
+          if (!word) {
+            // If it's an empty string from split, it means there was multiple spaces. Add space width.
+            if (curW > 0 && curW + spW <= maxW) {
+              curLine.push({ text: ' ', bold: seg.bold, italic: seg.italic, underline: seg.underline });
+              curW += spW;
+            }
+            continue;
+          }
+
           const st = seg.bold && seg.italic ? 'bolditalic' : seg.bold ? 'bold' : seg.italic ? 'italic' : 'normal';
           doc.setFont(baseFontPdf, st); doc.setFontSize(baseSz);
           const ww = doc.getStringUnitWidth(word) * baseSz * 0.352778;
           const needW = curW > 0 ? spW + ww : ww;
+
           if (curW > 0 && curW + needW > maxW) {
             lines.push(curLine); curLine = []; curW = 0;
           }
-          // Add space prefix if not first word on line
-          const txt = curW > 0 ? ' ' + word : word;
-          curLine.push({ text: txt, bold: seg.bold, italic: seg.italic, underline: seg.underline });
-          curW += curW > 0 ? spW + ww : ww;
+
+          // If we aren't at the start of a line, we need to push an unformatted space first
+          if (curW > 0) {
+            curLine.push({ text: ' ', bold: seg.bold, italic: seg.italic, underline: seg.underline });
+            curW += spW;
+          }
+
+          curLine.push({ text: word, bold: seg.bold, italic: seg.italic, underline: seg.underline });
+          curW += ww;
         }
       }
       if (curLine.length) lines.push(curLine);
