@@ -1841,11 +1841,14 @@
         }
 
         // BODY
+        const parsedTokens = parseContent(raw);
+        const hasCustomToc = parsedTokens.some(t => t.type === 'toc');
+        
         let firstCh = true;
         let hasSeenChapter = false;
         let tocPage = null;
 
-        for (const tok of parseContent(raw)) {
+        for (const tok of parsedTokens) {
 
           if (tok.type === 'pagebreak') {
             newPage();
@@ -1855,8 +1858,8 @@
           if (tok.type === 'ch') {
             if (doChBreak && hasSeenChapter) newPage();
 
-            // Fallback: If no custom [TOC] tag was hit before the first chapter, insert it here
-            if (!hasSeenChapter && doToc && !tocPage) {
+            // Fallback: If no custom [TOC] tag is anywhere in the doc, insert it before the first chapter
+            if (!hasCustomToc && !hasSeenChapter && doToc && !tocPage) {
               if (y > top) { newPage(); y = top; }
               tocPage = pageNum;
 
