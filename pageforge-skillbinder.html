@@ -1187,8 +1187,6 @@ function buildPDF(mode){
         sf(chPdf,'bold',chSize); tc(chRGB);
         const chLines = doc.splitTextToSize(tok.text,textW);
         for(const l of chLines){ doc.text(l,mL,y); y+=lh(chSize); }
-        doc.setDrawColor(...chRGB); doc.setLineWidth(0.3);
-        doc.line(mL, y+1, mL+textW*0.45, y+1);
         y += paraGap*2 + 1;
         doc.setTextColor(0,0,0);
 
