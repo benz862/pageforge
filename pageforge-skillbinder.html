@@ -3038,7 +3038,8 @@
 
         const fname = title.replace(/[^a-z0-9 _-]/gi, '').trim().replace(/\s+/g, '_') + '.pdf';
         if (mode === 'preview') {
-          doc.output('dataurlnewwindow', { filename: fname });
+          const blobURL = URL.createObjectURL(doc.output('blob'));
+          window.open(blobURL, '_blank');
           setStatus('✓ Opened in new tab.');
         } else {
           doc.save(fname);
