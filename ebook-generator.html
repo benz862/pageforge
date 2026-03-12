@@ -1393,7 +1393,7 @@
         // Table row detection
         if (t.startsWith('|') && t.endsWith('|')) {
           flush();
-          if (/^\|[\s\-:|]+\|$/.test(t)) continue; // skip alignment divider
+          if (/^\|(\s*:?-+:?\s*\|)+$/.test(t)) continue; // skip alignment divider
           const cells = t.slice(1, -1).split('|').map(s => s.trim());
           tableRows.push(cells);
         } else { flushTable(); }
