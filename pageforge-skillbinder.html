@@ -846,14 +846,12 @@
 
     input[type="color"] {
       width: 34px;
-      height: 28px;
+      height: 30px;
       border: 1px solid var(--rule);
       border-radius: 3px;
-      padding: 2px;
-      background: var(--cream);
+      padding: 0;
+      background: transparent;
       cursor: pointer;
-      position: relative;
-      z-index: 10;
     }
 
     input[type="color"]:focus {
@@ -1146,6 +1144,11 @@
       border-top: 1px solid #c8c2b8;
       margin: 1.1rem 0;
       width: 100%;
+    }
+
+    .preview-pane .preview-hr-partial {
+      width: 60%;
+      margin: 1.1rem auto;
     }
 
     .preview-pane .preview-bullet {
@@ -1946,6 +1949,7 @@
         else if (t.startsWith('## ')) { flush(); tokens.push({ type: 'h2', text: t.slice(3) }); }
         else if (t.startsWith('# ')) { flush(); tokens.push({ type: 'ch', text: t.slice(2) }); }
         else if (t === '---') { flush(); tokens.push({ type: 'hr' }); }
+        else if (t === '***') { flush(); tokens.push({ type: 'hr-partial' }); }
         else if (/^[-*] \[([ xX])\] /.test(t)) {
           flush();
           const checked = t[3].toLowerCase() === 'x';
@@ -2129,6 +2133,7 @@
         else if (tok.type === 'h2') h += `<div class="preview-h2">${parseInlineHTML(tok.text)}</div>`;
         else if (tok.type === 'h3') h += `<div class="preview-h3">${parseInlineHTML(tok.text)}</div>`;
         else if (tok.type === 'hr') h += `<hr class="preview-hr"/>`;
+        else if (tok.type === 'hr-partial') h += `<hr class="preview-hr preview-hr-partial"/>`;
         else if (tok.type === 'bullet') h += `<div class="preview-bullet">• ${parseInlineHTML(tok.text)}</div>`;
         else if (tok.type === 'checkbox') h += `<div class="preview-bullet" style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.25rem;"><span style="display:inline-flex;align-items:center;justify-content:center;width:13px;height:13px;min-width:13px;border:1.5px solid ${tok.checked ? '#1d3a52' : '#aab5c2'};border-radius:2px;background:${tok.checked ? '#1d3a52' : '#fff'};font-size:9px;font-weight:900;color:#fff;line-height:1;">${tok.checked ? '✓' : ''}</span><span style="${tok.checked ? 'text-decoration:line-through;opacity:0.5;' : ''}">${parseInlineHTML(tok.text)}</span></div>`;
         else if (tok.type === 'table') {
@@ -2390,10 +2395,18 @@
             doc.setTextColor(0, 0, 0);
 
           } else if (tok.type === 'hr') {
-            y += paraGap * 1.5;
+            if (y > safeBottom) newPage();
             doc.setDrawColor(200, 195, 188); doc.setLineWidth(0.3);
             doc.line(mL, y, mL + textW, y);
-            y += paraGap * 1.5;
+            y += lh(fontSize) * 1.5 + paraGap;
+
+          } else if (tok.type === 'hr-partial') {
+            if (y > safeBottom) newPage();
+            doc.setDrawColor(200, 195, 188); doc.setLineWidth(0.3);
+            const wPart = textW * 0.75;
+            const xOff = mL + (textW - wPart) / 2;
+            doc.line(xOff, y, xOff + wPart, y);
+            y += lh(fontSize) * 1.5 + paraGap;
 
           } else if (tok.type === 'bullet') {
             const bulletX = mL + indent + 3;

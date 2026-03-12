@@ -1290,6 +1290,7 @@
         else if (t.startsWith('## ')) { flush(); tokens.push({ type: 'h2', text: t.slice(3) }); }
         else if (t.startsWith('# ')) { flush(); tokens.push({ type: 'ch', text: t.slice(2) }); }
         else if (t === '---') { flush(); tokens.push({ type: 'hr' }); }
+        else if (t === '***') { flush(); tokens.push({ type: 'hr-partial' }); }
         else if (t.startsWith('- ') || t.startsWith('* ')) { flush(); tokens.push({ type: 'bullet', text: t.slice(2) }); }
         else if (t === '') { flush(); }
         else { para.push(t); }
@@ -1426,6 +1427,7 @@
         else if (tok.type === 'h2') h += `<div class="preview-h2">${parseInlineHTML(tok.text)}</div>`;
         else if (tok.type === 'h3') h += `<div class="preview-h3">${parseInlineHTML(tok.text)}</div>`;
         else if (tok.type === 'hr') h += `<hr class="preview-hr"/>`;
+        else if (tok.type === 'hr-partial') h += `<hr class="preview-hr preview-hr-partial"/>`;
         else if (tok.type === 'bullet') h += `<div class="preview-bullet">• ${parseInlineHTML(tok.text)}</div>`;
         else if (tok.type === 'p') h += `<p>${parseInlineHTML(tok.text)}</p>`;
       }
@@ -1644,10 +1646,18 @@
             doc.setTextColor(0, 0, 0);
 
           } else if (tok.type === 'hr') {
-            y += paraGap;
-            doc.setDrawColor(180, 170, 160); doc.setLineWidth(0.2);
-            doc.line(mL + textW * 0.2, y, mL + textW * 0.8, y);
-            y += paraGap * 1.5;
+            if (y > safeBottom) newPage();
+            doc.setDrawColor(200, 195, 188); doc.setLineWidth(0.3);
+            doc.line(mL, y, mL + textW, y);
+            y += lh(fontSize) * 1.5 + paraGap;
+
+          } else if (tok.type === 'hr-partial') {
+            if (y > safeBottom) newPage();
+            doc.setDrawColor(200, 195, 188); doc.setLineWidth(0.3);
+            const wPart = textW * 0.75;
+            const xOff = mL + (textW - wPart) / 2;
+            doc.line(xOff, y, xOff + wPart, y);
+            y += lh(fontSize) * 1.5 + paraGap;
 
           } else if (tok.type === 'bullet') {
             const bulletX = mL + indent + 3;
