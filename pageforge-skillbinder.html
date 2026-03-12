@@ -3448,11 +3448,11 @@ The learner who masters:
     };
 
     const TIER_CAPS = {
-      demo: { maxPages: 5, watermark: true, fonts: ['times', 'helvetica', 'courier'], covers: false, toc: false, colors: false },
-      free: { maxPages: 20, watermark: true, fonts: ['times', 'helvetica', 'courier'], covers: false, toc: false, colors: false },
-      starter: { maxPages: 100, watermark: false, fonts: null, covers: true, toc: false, colors: false },
-      author: { maxPages: null, watermark: false, fonts: null, covers: true, toc: true, colors: true },
-      publisher: { maxPages: null, watermark: false, fonts: null, covers: true, toc: true, colors: true },
+      demo: { maxPages: 5, watermark: true, fonts: ['times', 'helvetica', 'courier'], covers: false, toc: false, colors: false, pageSizes: ['letter'], pageNums: false },
+      free: { maxPages: 20, watermark: true, fonts: ['times', 'helvetica', 'courier'], covers: false, toc: false, colors: false, pageSizes: ['letter'], pageNums: false },
+      starter: { maxPages: 100, watermark: false, fonts: null, covers: true, toc: false, colors: false, pageSizes: null, pageNums: true },
+      author: { maxPages: null, watermark: false, fonts: null, covers: true, toc: true, colors: true, pageSizes: null, pageNums: true },
+      publisher: { maxPages: null, watermark: false, fonts: null, covers: true, toc: true, colors: true, pageSizes: null, pageNums: true },
     };
 
     // ── STATE ─────────────────────────────────────────────────────────────────────
@@ -3663,8 +3663,18 @@ The learner who masters:
       const tocEl = document.getElementById('showToc');
       if (tocEl) {
         tocEl.disabled = !caps.toc;
+        if (!caps.toc) tocEl.checked = false;
         const label = tocEl.parentElement;
         if (label) label.style.opacity = caps.toc ? '1' : '0.5';
+      }
+
+      // Page Nums checkbox
+      const numsEl = document.getElementById('showPageNums');
+      if (numsEl) {
+        numsEl.disabled = !caps.pageNums;
+        if (!caps.pageNums) numsEl.checked = false;
+        const label = numsEl.parentElement;
+        if (label) label.style.opacity = caps.pageNums ? '1' : '0.5';
       }
 
       // Colour pickers
@@ -3672,6 +3682,23 @@ The learner who masters:
         const el = document.getElementById(id);
         if (el) el.disabled = !caps.colors;
       });
+
+      // Page Size
+      const sizeEl = document.getElementById('pageSize');
+      if (sizeEl) {
+        Array.from(sizeEl.options).forEach(opt => {
+          if (caps.pageSizes && !caps.pageSizes.includes(opt.value)) {
+            opt.disabled = true;
+            opt.text = opt.text.replace(' 🔒', '') + ' 🔒';
+          } else {
+            opt.disabled = false;
+            opt.text = opt.text.replace(' 🔒', '');
+          }
+        });
+        if (caps.pageSizes && !caps.pageSizes.includes(sizeEl.value)) {
+          sizeEl.value = caps.pageSizes[0] || 'letter';
+        }
+      }
 
       // Show/hide limit banner
       const banner = document.getElementById('limitBanner');
