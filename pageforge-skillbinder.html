@@ -2042,7 +2042,7 @@
 
         // Color links navy, otherwise inherit
         if (seg.url) doc.setTextColor(29, 58, 82);
-        else if (baseColorRGB) tc(baseColorRGB);
+        else if (baseColorRGB) doc.setTextColor(baseColorRGB[0], baseColorRGB[1], baseColorRGB[2]);
         else doc.setTextColor(0, 0, 0);
 
         doc.text(seg.text, cx, y);
