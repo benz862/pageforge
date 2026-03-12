@@ -1493,12 +1493,12 @@
               <div class="field">
                 <label>Font</label>
                 <select id="bodyFont">
-                  <option value="times">Times New Roman</option>
+                  <option value="times" selected>Times New Roman</option>
                   <option value="helvetica">Helvetica / Arial</option>
                   <option value="courier">Courier Mono</option>
                   <option value="garamond" data-gf="EB Garamond">EB Garamond</option>
                   <option value="inter" data-gf="Inter">Inter</option>
-                  <option value="lora" data-gf="Lora" selected>Lora</option>
+                  <option value="lora" data-gf="Lora">Lora</option>
                   <option value="merriweather" data-gf="Merriweather">Merriweather</option>
                   <option value="playfair" data-gf="Playfair Display">Playfair Display</option>
                   <option value="sourcesans" data-gf="Source Sans 3">Source Sans 3</option>
@@ -1538,12 +1538,12 @@
                 <select id="chFont">
                   <option value="same">— same as body —</option>
                   <option value="times">Times New Roman</option>
-                  <option value="helvetica">Helvetica / Arial</option>
+                  <option value="helvetica" selected>Helvetica / Arial</option>
                   <option value="garamond" data-gf="EB Garamond">EB Garamond</option>
                   <option value="inter" data-gf="Inter">Inter</option>
                   <option value="lora" data-gf="Lora">Lora</option>
                   <option value="merriweather" data-gf="Merriweather">Merriweather</option>
-                  <option value="playfair" data-gf="Playfair Display" selected>Playfair Display</option>
+                  <option value="playfair" data-gf="Playfair Display">Playfair Display</option>
                   <option value="sourcesans" data-gf="Source Sans 3">Source Sans 3</option>
                   <option value="baskerville" data-gf="Libre Baskerville">Libre Baskerville</option>
                   <option value="crimson" data-gf="Crimson Pro">Crimson Pro</option>
@@ -3556,7 +3556,7 @@ The learner who masters:
           <div class="price-period" id="period-starter">Billed monthly</div>
           <hr class="pricing-divider" />
           <ul class="pricing-features">
-            <li>Up to 100 pages per export</li>
+            <li>3 exports per month</li>
             <li>All 11 fonts</li>
             <li>No watermark</li>
             <li>Cover image upload</li>
@@ -3575,7 +3575,7 @@ The learner who masters:
           <div class="trial-note">🎁 7-day free trial</div>
           <hr class="pricing-divider" />
           <ul class="pricing-features">
-            <li>Unlimited pages</li>
+            <li>20 exports per month</li>
             <li>All 11 fonts + colour pickers</li>
             <li>No watermark</li>
             <li>Cover & back cover images</li>
@@ -3589,7 +3589,7 @@ The learner who masters:
 
       <!-- Publisher note -->
       <div style="text-align:center;padding:0 1.5rem 1.5rem;font-size:0.8rem;color:#666;">
-        Need team seats, batch export, or white-labelling?
+        Need unlimited exports, team seats, or white-labelling?
         <button onclick="selectPlan('publisher')"
           style="background:none;border:none;color:var(--navy);font-weight:600;cursor:pointer;font-family:inherit;font-size:inherit;padding:0;text-decoration:underline;">Upgrade
           to Publisher — $49/mo</button>
@@ -3620,7 +3620,7 @@ The learner who masters:
     const TIER_CAPS = {
       demo: { maxPages: 5, watermark: true, fonts: ['times', 'helvetica', 'courier'], covers: false, toc: false, colors: false, pageSizes: ['letter'], pageNums: false },
       free: { maxPages: 20, watermark: true, fonts: ['times', 'helvetica', 'courier'], covers: false, toc: false, colors: false, pageSizes: ['letter'], pageNums: false },
-      starter: { maxPages: 100, watermark: false, fonts: null, covers: true, toc: false, colors: false, pageSizes: null, pageNums: true },
+      starter: { maxPages: 100, watermark: false, fonts: null, covers: true, toc: false, colors: false, pageSizes: ['letter'], pageNums: true },
       author: { maxPages: null, watermark: false, fonts: null, covers: true, toc: true, colors: true, pageSizes: null, pageNums: true },
       publisher: { maxPages: null, watermark: false, fonts: null, covers: true, toc: true, colors: true, pageSizes: null, pageNums: true },
     };

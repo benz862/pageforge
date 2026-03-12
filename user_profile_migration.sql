@@ -17,14 +17,15 @@ SELECT
   count(b.id)::int                            AS build_count,
   CASE ut.tier
     WHEN 'free'      THEN 3
-    WHEN 'starter'   THEN 25
-    WHEN 'author'    THEN -1   -- unlimited
+    WHEN 'starter'   THEN 3
+    WHEN 'author'    THEN 20
     WHEN 'publisher' THEN -1   -- unlimited
     ELSE 3
   END                                          AS max_builds,
   CASE ut.tier
     WHEN 'free'      THEN (count(b.id) >= 3)
-    WHEN 'starter'   THEN (count(b.id) >= 25)
+    WHEN 'starter'   THEN (count(b.id) >= 3)
+    WHEN 'author'    THEN (count(b.id) >= 20)
     ELSE false
   END                                          AS at_limit
 FROM public.user_tiers ut
