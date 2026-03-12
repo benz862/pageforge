@@ -2691,6 +2691,7 @@
         
         let firstCh = true;
         let hasSeenChapter = false;
+        let hasManualNumbering = false;
         
         for (const tok of parsedTokens) {
 
@@ -2703,6 +2704,7 @@
             pageNumStyle = 'roman-arabic';
             bodyStarted = false;
             romanPageNum = 1;
+            hasManualNumbering = true;
             continue;
           }
 
@@ -2710,6 +2712,7 @@
             bodyStarted = true;
             arabicPageNum = tok.val;
             globalArabicNum = tok.val;
+            hasManualNumbering = true;
             continue;
           }
 
@@ -2733,16 +2736,18 @@
             const tl = tok.text.toLowerCase();
             const isFrontMatter = ['preface', 'foreword', 'prologue', 'introduction', 'dedication', 'table of contents'].some(k => tl.includes(k));
 
-            if (firstCh && !isFrontMatter) {
-              bodyStarted = true;
-              arabicPageNum = 1;  // this page is arabic page 1
-              firstCh = false;
-            } else if (firstCh && isFrontMatter) {
-              // We keep firstCh true so the next chapter gets evaluated
-            } else if (!firstCh && !bodyStarted && !isFrontMatter) {
-              // If there were multiple front matter pages, we catch the start of the body here
-              bodyStarted = true;
-              arabicPageNum = 1;
+            if (!hasManualNumbering) {
+              if (firstCh && !isFrontMatter) {
+                bodyStarted = true;
+                arabicPageNum = 1;  // this page is arabic page 1
+                firstCh = false;
+              } else if (firstCh && isFrontMatter) {
+                // We keep firstCh true so the next chapter gets evaluated
+              } else if (!firstCh && !bodyStarted && !isFrontMatter) {
+                // If there were multiple front matter pages, we catch the start of the body here
+                bodyStarted = true;
+                arabicPageNum = 1;
+              }
             }
 
             // ensure room for chapter title + at least one line of body

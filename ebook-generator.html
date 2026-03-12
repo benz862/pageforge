@@ -1860,6 +1860,7 @@
         
         let firstCh = true;
         let hasSeenChapter = false;
+        let hasManualNumbering = false;
         let tocPage = null;
 
         for (const tok of parsedTokens) {
@@ -1873,6 +1874,7 @@
             pageNumStyle = 'roman-arabic';
             bodyStarted = false;
             romanPageNum = 1;
+            hasManualNumbering = true;
             continue;
           }
 
@@ -1880,6 +1882,7 @@
             bodyStarted = true;
             arabicPageNum = tok.val;
             globalArabicNum = tok.val;
+            hasManualNumbering = true;
             continue;
           }
 
@@ -1901,9 +1904,11 @@
             hasSeenChapter = true;
 
             // First chapter: switch from roman to arabic numbering
-            if (firstCh) {
-              bodyStarted = true;
-              arabicPageNum = 1;  // this page is arabic page 1
+            if (!hasManualNumbering) {
+              if (firstCh) {
+                bodyStarted = true;
+                arabicPageNum = 1;  // this page is arabic page 1
+              }
             }
             firstCh = false;
             // ensure room for chapter title + at least one line of body
