@@ -4186,7 +4186,7 @@ The learner who masters:
         });
         listEl.innerHTML = html;
       } catch (e) {
-        listEl.innerHTML = '<div style="font-size:0.8rem; color:var(--red); text-align:center; padding:1rem;">Error loading members.</div>';
+        listEl.innerHTML = `<div style="font-size:0.8rem; color:var(--red); text-align:center; padding:1rem;">Error loading members: ${e.message || 'Unknown error'}</div>`;
       }
     }
 
