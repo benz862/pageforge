@@ -3589,7 +3589,7 @@ The learner who masters:
 
       <!-- Publisher note -->
       <div style="text-align:center;padding:0 1.5rem 1.5rem;font-size:0.8rem;color:#666;">
-        Need unlimited exports, team seats, or white-labelling?
+        Need more exports, team seats, or white-labelling?
         <button onclick="selectPlan('publisher')"
           style="background:none;border:none;color:var(--navy);font-weight:600;cursor:pointer;font-family:inherit;font-size:inherit;padding:0;text-decoration:underline;">Upgrade
           to Publisher — $49/mo</button>
@@ -4108,6 +4108,14 @@ The learner who masters:
           errEl.textContent = 'Team not found. You must be the Publisher owner.'; errEl.classList.add('show'); return;
         }
 
+        // Limit to 3 seats for base Publisher plan
+        const { data: membersCheck } = await sbClient.from('team_members').select('id').eq('team_id', teamData.id);
+        if (membersCheck && membersCheck.length >= 3) {
+          errEl.textContent = 'Publisher tier is limited to 3 team seats. Please contact support to add more seats.';
+          errEl.classList.add('show');
+          return;
+        }
+
         const { error } = await sbClient.from('team_members').insert({
           team_id: teamData.id,
           email: email
@@ -4150,7 +4158,7 @@ The learner who masters:
     let savesMode = 'builds'; // 'builds' | 'templates'
     let pendingSaveType = null; // 'build' | 'template'
 
-    const TIER_BUILD_LIMITS = { demo: 0, free: 3, starter: 25, author: 9999, publisher: 9999 };
+    const TIER_BUILD_LIMITS = { demo: 0, free: 3, starter: 25, author: 9999, publisher: 50 };
     const TIER_TEMPLATE_LIMITS = { demo: 0, free: 2, starter: 10, author: 9999, publisher: 9999 };
 
     // ── TAB SWITCHING ─────────────────────────────────────────────────────────────

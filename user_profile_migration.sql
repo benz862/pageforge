@@ -19,13 +19,14 @@ SELECT
     WHEN 'free'      THEN 3
     WHEN 'starter'   THEN 3
     WHEN 'author'    THEN 20
-    WHEN 'publisher' THEN -1   -- unlimited
+    WHEN 'publisher' THEN 50
     ELSE 3
   END                                          AS max_builds,
   CASE ut.tier
     WHEN 'free'      THEN (count(b.id) >= 3)
     WHEN 'starter'   THEN (count(b.id) >= 3)
     WHEN 'author'    THEN (count(b.id) >= 20)
+    WHEN 'publisher' THEN (count(b.id) >= 50)
     ELSE false
   END                                          AS at_limit
 FROM public.user_tiers ut
