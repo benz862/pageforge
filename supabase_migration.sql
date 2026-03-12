@@ -40,6 +40,7 @@ begin
 end;
 $$ language plpgsql;
 
+drop trigger if exists on_user_tiers_updated on public.user_tiers;
 create trigger on_user_tiers_updated
   before update on public.user_tiers
   for each row execute procedure public.handle_updated_at();
