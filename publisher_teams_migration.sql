@@ -37,14 +37,14 @@ CREATE POLICY "Team owners can manage members"
     )
   );
 
+-- Drop the old recursive policy if it exists
 DROP POLICY IF EXISTS "Members can view other members in their team" ON public.team_members;
-CREATE POLICY "Members can view other members in their team"
+DROP POLICY IF EXISTS "Members can view their own membership" ON public.team_members;
+
+CREATE POLICY "Members can view their own membership"
   ON public.team_members FOR SELECT
   USING (
-    EXISTS (
-      SELECT 1 FROM public.team_members tm
-      WHERE tm.team_id = public.team_members.team_id AND tm.user_id = auth.uid()
-    )
+    user_id = auth.uid() OR email = auth.email()
   );
 
 -- ── 3. Policies for Teams table ───────────────────────────────────────────────

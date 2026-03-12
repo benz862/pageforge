@@ -1185,12 +1185,24 @@
             <code>### Subheading</code> — Subsection<br>
             <code>**bold**</code> — Bold<br>
             <code>*italic*</code> — Italic<br>
+            <code>***bold italic***</code> — Bold &amp; Italic<br>
             <code>__underline__</code> — Underline<br>
             <code>- item</code> or <code>* item</code> — Bullet<br>
             <code>---</code> — Full Rule<br>
             <code>***</code> — 75% Rule<br>
             <code>[Label](url)</code> — Link<br>
+            <code>____</code> — Fill-in blank line<br>
+            <code>____</code> — Fill-in blank line<br>
+            <code>[TOC]</code> — Table of Contents<br>
             Blank line = new paragraph
+          </p>
+          <p style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid var(--rule);">
+            <strong
+              style="font-size:0.68rem;color:var(--navy);text-transform:uppercase;letter-spacing:0.04em;">Tables</strong><br>
+            <code>| Col 1 | Col 2 |</code><br>
+            <code>| ----- | ----- |</code><br>
+            <code>| A     | B     |</code><br>
+            First row = header row
           </p>
         </div>
       </div>
@@ -1428,6 +1440,7 @@
         else if (t.startsWith('# ')) { flush(); tokens.push({ type: 'ch', text: t.slice(2) }); }
         else if (t === '---') { flush(); tokens.push({ type: 'hr' }); }
         else if (t === '***') { flush(); tokens.push({ type: 'hr-partial' }); }
+        else if (t.toUpperCase() === '[TOC]') { flush(); tokens.push({ type: 'toc' }); }
         else if (t.startsWith('- ') || t.startsWith('* ')) { flush(); tokens.push({ type: 'bullet', text: t.slice(2) }); }
         else if (t === '') { flush(); }
         else {
@@ -1635,6 +1648,8 @@
           h += `<hr style="border:0; border-top:1px solid var(--rule); margin:2em 0;" />`;
         } else if (tok.type === 'hr-partial') {
           h += `<div style="text-align:center;"><hr class="preview-hr-partial" /></div>`;
+        } else if (tok.type === 'toc') {
+          h += `<div style="padding:1rem;margin:1rem 0;background:#f0f4f8;border:1px dashed var(--navy);color:var(--navy);text-align:center;font-weight:600;border-radius:4px;">[ TABLE OF CONTENTS WILL BE GENERATED HERE ]</div>`;
         } else if (tok.type === 'table') {
           h += `<table>`;
           tok.rows.forEach((row, ri) => {
@@ -1821,21 +1836,25 @@
           romanPageNum = 1; // first page is front matter with roman i
         }
 
-        // TOC page (reserved) — front matter, gets roman numeral
-        const tocPage = pageNum;
-        if (doToc) {
-          sf(chPdf, 'bold', chSize);
-          tc(chRGB);
-          doc.text('Table of Contents', mL, y);
-          y += lh(chSize) + 5;
-          newPage(); // TOC page gets roman, next page increments roman too
-        }
-
         // BODY
         let firstCh = true;
+        let tocPage = null;
+
         for (const tok of parseContent(raw)) {
 
           if (tok.type === 'ch') {
+            // Fallback: If no custom [TOC] tag was hit before the first chapter, insert it here
+            if (doToc && !tocPage) {
+              if (y > top) { newPage(); y = top; }
+              tocPage = pageNum;
+
+              sf(chPdf, 'bold', chSize);
+              tc(chRGB);
+              doc.text('Table of Contents', mL, y);
+              y += lh(chSize) + 5;
+              newPage(); // TOC gets its own page break
+            }
+
             if (doChBreak && !firstCh) newPage();
             // First chapter: switch from roman to arabic numbering
             if (firstCh) {
@@ -1888,6 +1907,19 @@
             const xOff = mL + (textW - wPart) / 2;
             doc.line(xOff, y, xOff + wPart, y);
             y += lh(fontSize) * 1.5 + paraGap;
+
+          } else if (tok.type === 'toc') {
+            if (doToc && !tocPage) {
+              if (y > top) { newPage(); y = top; }
+              tocPage = pageNum;
+
+              sf(chPdf, 'bold', chSize);
+              tc(chRGB);
+              doc.text('Table of Contents', mL, y);
+              y += lh(chSize) + 5;
+              newPage(); // reserve page for TOC
+            }
+            return; // Exit iteration so Table of Contents can be rendered later
 
           } else if (tok.type === 'bullet') {
             const bulletX = mL + indent + 3;

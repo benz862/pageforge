@@ -1800,6 +1800,7 @@
             <code>[Label](url)</code> — Link<br>
             <code>____</code> — Fill-in blank line<br>
             <code>____</code> — Fill-in blank line<br>
+            <code>[TOC]</code> — Table of Contents<br>
             Blank line = new paragraph
           </p>
           <p style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid var(--rule);">
@@ -2223,6 +2224,7 @@
         else if (t.startsWith('# ')) { flush(); tokens.push({ type: 'ch', text: t.slice(2) }); }
         else if (t === '---') { flush(); tokens.push({ type: 'hr' }); }
         else if (t === '***') { flush(); tokens.push({ type: 'hr-partial' }); }
+        else if (t.toUpperCase() === '[TOC]') { flush(); tokens.push({ type: 'toc' }); }
         else if (/^[-*] \[([ xX])\] /.test(t)) {
           flush();
           const checked = t[3].toLowerCase() === 'x';
@@ -2437,6 +2439,18 @@
         else if (tok.type === 'h3') h += `<div class="preview-h3">${parseInlineHTML(tok.text)}</div>`;
         else if (tok.type === 'hr') h += `<hr class="preview-hr"/>`;
         else if (tok.type === 'hr-partial') h += `<hr class="preview-hr preview-hr-partial"/>`;
+        else if (tok.type === 'toc') {
+          h += `<div style="margin:2rem 0; padding:1.5rem; background:#f8fafc; border:1px dashed #ccd4de; border-radius:6px;">
+                  <div style="font-weight:700; color:#1d3a52; margin-bottom:1rem; font-size:1.1rem;">Table of Contents (Auto-Generated in PDF)</div>
+                  <div style="display:flex; justify-content:space-between; color:#6b8099; font-size:0.9rem; margin-bottom:0.4rem;">
+                    <span>Chapter 1: The First Step</span><span>1</span>
+                  </div>
+                  <div style="display:flex; justify-content:space-between; color:#6b8099; font-size:0.9rem; margin-bottom:0.4rem;">
+                    <span style="padding-left:1rem;">1.1 Getting Started</span><span>3</span>
+                  </div>
+                  <div style="font-size:0.8rem; color:#aab5c2; margin-top:1rem; font-style:italic;">*This is a preview placeholder. The final PDF will map your exact document pages.*</div>
+                </div>`;
+        }
         else if (tok.type === 'bullet') h += `<div class="preview-bullet">• ${parseInlineHTML(tok.text)}</div>`;
         else if (tok.type === 'checkbox') h += `<div class="preview-bullet" style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.25rem;"><span style="display:inline-flex;align-items:center;justify-content:center;width:13px;height:13px;min-width:13px;border:1.5px solid ${tok.checked ? '#1d3a52' : '#aab5c2'};border-radius:2px;background:${tok.checked ? '#1d3a52' : '#fff'};font-size:9px;font-weight:900;color:#fff;line-height:1;">${tok.checked ? '✓' : ''}</span><span style="${tok.checked ? 'text-decoration:line-through;opacity:0.5;' : ''}">${parseInlineHTML(tok.text)}</span></div>`;
         else if (tok.type === 'table') {
@@ -2654,15 +2668,7 @@
           romanPageNum = 1; // first page is front matter with roman i
         }
 
-        // TOC page (reserved) — front matter, gets roman numeral
-        const tocPage = pageNum;
-        if (doToc) {
-          sf(chPdf, 'bold', chSize);
-          tc(chRGB);
-          doc.text('Table of Contents', mL, y);
-          y += lh(chSize) + 5;
-          newPage(); // TOC page gets roman, next page increments roman too
-        }
+        let tocPage = null;
 
         // BODY
         let firstCh = true;
@@ -2685,6 +2691,17 @@
               // If there were multiple front matter pages, we catch the start of the body here
               bodyStarted = true;
               arabicPageNum = 1;
+            }
+
+            // Fallback: If no custom [TOC] tag was hit before the first chapter, insert it here
+            if (firstCh && doToc && !tocPage) {
+              if (y + lh(chSize) * 5 > safeBottom) newPage();
+              tocPage = pageNum;
+              sf(chPdf, 'bold', chSize);
+              tc(chRGB);
+              doc.text('Table of Contents', mL, y);
+              y += lh(chSize) + 5;
+              newPage();
             }
 
             // ensure room for chapter title + at least one line of body
@@ -2732,6 +2749,18 @@
             const xOff = mL + (textW - wPart) / 2;
             doc.line(xOff, y, xOff + wPart, y);
             y += lh(fontSize) * 1.5 + paraGap;
+
+          } else if (tok.type === 'toc' && doToc && !tocPage) {
+            // Only allocating the first TOC encountered
+            if (y + lh(chSize) * 5 > safeBottom) newPage();
+            tocPage = pageNum;
+            sf(chPdf, 'bold', chSize);
+            tc(chRGB);
+            doc.text('Table of Contents', mL, y);
+            y += lh(chSize) + 5;
+            // Note: we DO NOT call newPage() here manually because TOC might overflow
+            // We just let the blank space serve as reservation, but we force a page break after it
+            newPage();
 
           } else if (tok.type === 'bullet') {
             const bulletX = mL + indent + 3;
@@ -2865,12 +2894,13 @@
                     const activeValign = isHeader ? tblHeadValign : tblBodyValign;
                     let blockY = rowTop + cellPadY;
                     const contentH = lines.length * lh(tblSize);
+
                     if (activeValign === 'middle') {
                       blockY = rowTop + (rowH - contentH) / 2;
                     } else if (activeValign === 'bottom') {
                       blockY = rowTop + rowH - cellPadY - contentH;
                     }
-                    const drawY = blockY + lh(tblSize) * 0.82 + li * lh(tblSize);
+                    const drawY = blockY + (lh(tblSize) * 0.82) + (li * lh(tblSize));
 
                     const tc = isHeader ? [255, 255, 255] : tblRGB;
                     drawInlineLine(doc, lineSegs, drawX, drawY, tblPdf, tblSize, tc);
@@ -2996,6 +3026,16 @@
 
         addPageNum();
         addWatermarks();
+
+        // Log the Export usage asynchronously if the user is authenticated 
+        if (currentUser && currentTier !== 'demo' && currentTier !== 'free') {
+          sbClient.from('usage_logs').insert({ user_id: currentUser.id, action: 'export_pdf' }).then();
+        } else if (currentUser && currentTier === 'free') {
+          // Free tier is strictly limited to 3 saves total, so no silent monthly reset logic is applied 
+          // In future iterations, to enforce the strict 3 limit, this would log here too.
+          sbClient.from('usage_logs').insert({ user_id: currentUser.id, action: 'export_pdf' }).then();
+        }
+
         const fname = title.replace(/[^a-z0-9 _-]/gi, '').trim().replace(/\s+/g, '_') + '.pdf';
         if (mode === 'preview') {
           doc.output('dataurlnewwindow', { filename: fname });
@@ -3004,6 +3044,12 @@
           doc.save(fname);
           setStatus('✓ Downloaded: ' + fname);
         }
+
+        // Asynchronously update the UI badge to reflect the new count 
+        if (currentUser) {
+          setTimeout(() => { loadSavesAndTemplates(); }, 1000);
+        }
+
         setTimeout(() => setStatus('Ready.'), 5000);
 
       } catch (err) {
@@ -3518,8 +3564,8 @@ The learner who masters:
             <label>Invite by Email</label>
             <input type="email" id="teamInviteEmail" placeholder="colleague@example.com" />
           </div>
-          <button class="btn-auth-submit" style="width:auto; margin-top:0; padding: 0.75rem 1.5rem;"
-            onclick="inviteTeamMember()" id="btnInviteMember">Invite</button>
+          <button type="button" class="btn-auth-submit" style="width:auto; margin-top:0; padding: 0.75rem 1.5rem;"
+            onclick="inviteTeamMember(event)" id="btnInviteMember">Invite</button>
         </div>
         <div class="auth-error" id="teamError" style="margin-top:0.5rem;"></div>
         <div class="auth-success" id="teamSuccess"
@@ -4190,7 +4236,8 @@ The learner who masters:
       }
     }
 
-    async function inviteTeamMember() {
+    async function inviteTeamMember(e) {
+      if (e) e.preventDefault(); {
       const email = document.getElementById('teamInviteEmail').value.trim();
       const errEl = document.getElementById('teamError');
       const succEl = document.getElementById('teamSuccess');
