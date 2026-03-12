@@ -2669,15 +2669,26 @@
 
           if (tok.type === 'ch') {
             if (doChBreak && !firstCh) newPage();
-            // First chapter: switch from roman to arabic numbering
-            if (firstCh) {
+
+            // Front matter check to prevent Arabic numeral flip on Preface/TOC etc
+            const tl = tok.text.toLowerCase();
+            const isFrontMatter = ['preface', 'foreword', 'prologue', 'introduction', 'dedication', 'table of contents'].some(k => tl.includes(k));
+
+            if (firstCh && !isFrontMatter) {
               bodyStarted = true;
               arabicPageNum = 1;  // this page is arabic page 1
+              firstCh = false;
+            } else if (firstCh && isFrontMatter) {
+              // We keep firstCh true so the next chapter gets evaluated
+            } else if (!firstCh && !bodyStarted && !isFrontMatter) {
+              // If there were multiple front matter pages, we catch the start of the body here
+              bodyStarted = true;
+              arabicPageNum = 1;
             }
-            firstCh = false;
+
             // ensure room for chapter title + at least one line of body
             if (y + lh(chSize) * 3 > safeBottom) newPage();
-            let displayPage = pageNumStyle === 'arabic-only' ? String(globalArabicNum) : String(arabicPageNum);
+            let displayPage = pageNumStyle === 'arabic-only' ? String(globalArabicNum) : (bodyStarted ? String(arabicPageNum) : toRoman(romanPageNum));
             tocEntries.push({ level: 1, text: tok.text, displayPage: displayPage, physicalPage: pageNum });
             sf(chPdf, 'bold', chSize); tc(chRGB);
             const chLines = doc.splitTextToSize(tok.text, textW);
