@@ -289,19 +289,40 @@
     }
 
     input[type="color"] {
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
       width: 34px;
-      height: 28px;
+      height: 30px;
+      border: none;
+      padding: 0;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    input[type="color"]::-webkit-color-swatch-wrapper {
+      padding: 0;
+    }
+
+    input[type="color"]::-webkit-color-swatch {
       border: 1px solid var(--rule);
       border-radius: 3px;
-      padding: 2px;
-      background: var(--cream);
-      cursor: pointer;
-      position: relative;
-      z-index: 10;
+    }
+
+    input[type="color"]::-moz-color-swatch {
+      border: 1px solid var(--rule);
+      border-radius: 3px;
     }
 
     input[type="color"]:focus {
       outline: none;
+    }
+
+    input[type="color"]:focus::-webkit-color-swatch {
+      border-color: var(--navy);
+    }
+
+    input[type="color"]:focus::-moz-color-swatch {
       border-color: var(--navy);
     }
 
