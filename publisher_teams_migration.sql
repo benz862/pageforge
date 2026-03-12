@@ -14,21 +14,6 @@ CREATE TABLE IF NOT EXISTS public.teams (
 
 ALTER TABLE public.teams ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Team owners can manage their team" ON public.teams;
-CREATE POLICY "Team owners can manage their team"
-  ON public.teams FOR ALL
-  USING (auth.uid() = owner_id);
-
-DROP POLICY IF EXISTS "Team members can view their team" ON public.teams;
-CREATE POLICY "Team members can view their team"
-  ON public.teams FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.team_members
-      WHERE team_id = public.teams.id AND user_id = auth.uid()
-    )
-  );
-
 -- ── 2. Create Team Members Table ──────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.team_members (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -62,7 +47,24 @@ CREATE POLICY "Members can view other members in their team"
     )
   );
 
--- ── 3. Helper Function/View for effective tier ──────────────────────────────
+-- ── 3. Policies for Teams table ───────────────────────────────────────────────
+
+DROP POLICY IF EXISTS "Team owners can manage their team" ON public.teams;
+CREATE POLICY "Team owners can manage their team"
+  ON public.teams FOR ALL
+  USING (auth.uid() = owner_id);
+
+DROP POLICY IF EXISTS "Team members can view their team" ON public.teams;
+CREATE POLICY "Team members can view their team"
+  ON public.teams FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.team_members
+      WHERE team_id = public.teams.id AND user_id = auth.uid()
+    )
+  );
+
+-- ── 4. Helper Function/View for effective tier ──────────────────────────────
 -- This securely determines whether the user is a publisher directly, or
 -- indirectly via a team owner.
 CREATE OR REPLACE FUNCTION public.get_effective_tier(user_uuid uuid)
@@ -99,7 +101,7 @@ BEGIN
 END;
 $$;
 
--- ── 4. Auto-create Team for Publishers ─────────────────────────────────────
+-- ── 5. Auto-create Team for Publishers ─────────────────────────────────────
 CREATE OR REPLACE FUNCTION public.handle_publisher_team_creation()
 RETURNS trigger
 LANGUAGE plpgsql
