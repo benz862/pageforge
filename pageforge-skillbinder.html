@@ -2893,8 +2893,29 @@
 
         // WATERMARK
         function addWatermarks() {
-          if (!_caps.watermark) return;
           const totalPages = doc.internal.getNumberOfPages();
+
+          if (mode === 'preview') {
+            for (let p = 1; p <= totalPages; p++) {
+              doc.setPage(p);
+              doc.setFont('helvetica', 'bold');
+              doc.setFontSize(40);
+              doc.setTextColor(180, 180, 180);
+              doc.setGState(new doc.GState({ opacity: 0.2 }));
+
+              // Stamp PREVIEW ONLY diagonally across the page multiple times
+              doc.text('PREVIEW ONLY', pw / 2, ph * 0.25, { align: 'center', angle: 45 });
+              doc.text('PREVIEW ONLY', pw / 2, ph * 0.5, { align: 'center', angle: 45 });
+              doc.text('PREVIEW ONLY', pw / 2, ph * 0.75, { align: 'center', angle: 45 });
+
+              doc.setGState(new doc.GState({ opacity: 1 }));
+              doc.setTextColor(0, 0, 0);
+            }
+            return;
+          }
+
+          if (!_caps.watermark) return;
+
           for (let p = 1; p <= totalPages; p++) {
             doc.setPage(p);
             doc.setFont('helvetica', 'bold');
