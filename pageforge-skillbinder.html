@@ -2305,6 +2305,7 @@
         if (seg.underline) {
           const uY = y + 0.6;
           if (seg.url) doc.setDrawColor(29, 58, 82); // underline links navy too
+          else if (baseColorRGB) doc.setDrawColor(baseColorRGB[0], baseColorRGB[1], baseColorRGB[2]);
           else doc.setDrawColor(0, 0, 0);
           doc.setLineWidth(0.2);
           doc.line(cx, uY, cx + w, uY);
