@@ -1801,6 +1801,7 @@
             <code>____</code> — Fill-in blank line<br>
             <code>____</code> — Fill-in blank line<br>
             <code>[TOC]</code> — Table of Contents<br>
+            <code>[PAGEBREAK]</code> — Manual page break<br>
             Blank line = new paragraph
           </p>
           <p style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid var(--rule);">
@@ -2225,6 +2226,7 @@
         else if (t === '---') { flush(); tokens.push({ type: 'hr' }); }
         else if (t === '***') { flush(); tokens.push({ type: 'hr-partial' }); }
         else if (t.toUpperCase() === '[TOC]') { flush(); tokens.push({ type: 'toc' }); }
+        else if (t.toUpperCase() === '[PAGEBREAK]') { flush(); tokens.push({ type: 'pagebreak' }); }
         else if (/^[-*] \[([ xX])\] /.test(t)) {
           flush();
           const checked = t[3].toLowerCase() === 'x';
@@ -2439,6 +2441,7 @@
         else if (tok.type === 'h3') h += `<div class="preview-h3">${parseInlineHTML(tok.text)}</div>`;
         else if (tok.type === 'hr') h += `<hr class="preview-hr"/>`;
         else if (tok.type === 'hr-partial') h += `<hr class="preview-hr preview-hr-partial"/>`;
+        else if (tok.type === 'pagebreak') h += `<div style="text-align:center; padding:10px 0; margin:20px 0; background-color:#f8fafc; border-top:1px dashed #ccd4de; border-bottom:1px dashed #ccd4de; color:#6b8099; font-size:0.8rem; font-weight:600; letter-spacing:0.05em;">----- PAGE BREAK -----</div>`;
         else if (tok.type === 'toc') {
           h += `<div style="margin:2rem 0; padding:1.5rem; background:#f8fafc; border:1px dashed #ccd4de; border-radius:6px;">
                   <div style="font-weight:700; color:#1d3a52; margin-bottom:1rem; font-size:1.1rem;">Table of Contents (Auto-Generated in PDF)</div>
@@ -2672,10 +2675,29 @@
 
         // BODY
         let firstCh = true;
+        let hasSeenChapter = false;
         for (const tok of parseContent(raw)) {
 
+          if (tok.type === 'pagebreak') {
+            newPage();
+            continue;
+          }
+
           if (tok.type === 'ch') {
-            if (doChBreak && !firstCh) newPage();
+            if (doChBreak && hasSeenChapter) newPage();
+
+            // Fallback: If no custom [TOC] tag was hit before the first chapter, insert it here
+            if (!hasSeenChapter && doToc && !tocPage) {
+              if (y + lh(chSize) * 5 > safeBottom) newPage();
+              tocPage = pageNum;
+              sf(chPdf, 'bold', chSize);
+              tc(chRGB);
+              doc.text('Table of Contents', mL, y);
+              y += lh(chSize) + 5;
+              newPage();
+            }
+
+            hasSeenChapter = true;
 
             // Front matter check to prevent Arabic numeral flip on Preface/TOC etc
             const tl = tok.text.toLowerCase();
@@ -2691,17 +2713,6 @@
               // If there were multiple front matter pages, we catch the start of the body here
               bodyStarted = true;
               arabicPageNum = 1;
-            }
-
-            // Fallback: If no custom [TOC] tag was hit before the first chapter, insert it here
-            if (firstCh && doToc && !tocPage) {
-              if (y + lh(chSize) * 5 > safeBottom) newPage();
-              tocPage = pageNum;
-              sf(chPdf, 'bold', chSize);
-              tc(chRGB);
-              doc.text('Table of Contents', mL, y);
-              y += lh(chSize) + 5;
-              newPage();
             }
 
             // ensure room for chapter title + at least one line of body
@@ -2892,15 +2903,19 @@
                     }
 
                     const activeValign = isHeader ? tblHeadValign : tblBodyValign;
-                    let blockY = rowTop + cellPadY;
                     const contentH = lines.length * lh(tblSize);
+                    
+                    // Base line offset for the very first line's baseline roughly equal to font height
+                    const baselineOffset = tblSize * 0.352778; 
+                    let blockY = rowTop + cellPadY;
 
                     if (activeValign === 'middle') {
                       blockY = rowTop + (rowH - contentH) / 2;
                     } else if (activeValign === 'bottom') {
                       blockY = rowTop + rowH - cellPadY - contentH;
                     }
-                    const drawY = blockY + (lh(tblSize) * 0.82) + (li * lh(tblSize));
+                    
+                    const drawY = blockY + baselineOffset + (li * lh(tblSize));
 
                     const tc = isHeader ? [255, 255, 255] : tblRGB;
                     drawInlineLine(doc, lineSegs, drawX, drawY, tblPdf, tblSize, tc);
