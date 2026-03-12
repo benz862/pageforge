@@ -2062,13 +2062,12 @@
         // Table row: starts and ends with |
         if (t.startsWith('|') && t.endsWith('|')) {
           flush();
-          // Skip separator rows |---|---|
-          const inner = t.slice(1, -1);
-          if (/^[\s\-:|]+$/.test(inner.replace(/\|/g, ''))) { continue; }
-          const cells = inner.split('|').map(c => c.trim());
+          if (/^\|[\s\-:|]+\|$/.test(t)) continue; // skip alignment divider
+          const cells = t.slice(1, -1).split('|').map(s => s.trim());
           tableRows.push(cells);
-          continue;
         } else { flushTable(); }
+
+        if (t.startsWith('|') && t.endsWith('|')) continue;
         if (t.startsWith('### ')) { flush(); tokens.push({ type: 'h3', text: t.slice(4) }); }
         else if (t.startsWith('## ')) { flush(); tokens.push({ type: 'h2', text: t.slice(3) }); }
         else if (t.startsWith('# ')) { flush(); tokens.push({ type: 'ch', text: t.slice(2) }); }

@@ -1398,6 +1398,8 @@
           tableRows.push(cells);
         } else { flushTable(); }
 
+        if (t.startsWith('|') && t.endsWith('|')) continue;
+
         if (t.startsWith('### ')) { flush(); tokens.push({ type: 'h3', text: t.slice(4) }); }
         else if (t.startsWith('## ')) { flush(); tokens.push({ type: 'h2', text: t.slice(3) }); }
         else if (t.startsWith('# ')) { flush(); tokens.push({ type: 'ch', text: t.slice(2) }); }
