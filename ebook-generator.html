@@ -1138,7 +1138,9 @@
           <div class="toggle-row"><input type="checkbox" id="showPageNums" checked /><label for="showPageNums">Page
               numbers</label></div>
           <div class="field" style="margin-top: 5px; margin-bottom: 5px;">
-            <label>Numbering Style</label>
+            <label style="display:flex; align-items:center;">Numbering Style <span
+                title="'Roman Front, Numeric Body' uses i, ii... for Cover & TOC, then 1, 2... for main chapters. 'Numeric Everywhere' uses 1, 2... starting from page 1."
+                style="cursor:help; background:rgba(0,0,0,0.1); border-radius:50%; width:14px; height:14px; display:inline-flex; justify-content:center; align-items:center; font-size:10px; margin-left:6px; font-weight:bold;">?</span></label>
             <select id="pageNumStyle" class="select-field">
               <option value="roman-arabic" selected>Roman Front, Numeric Body</option>
               <option value="arabic-only">Numeric Everywhere</option>
@@ -2037,7 +2039,7 @@
     // ─── INIT ──────────────────────────────────────────────────────────────────────
     document.getElementById('content').value = `# Chapter 1: The Science of Learning
 
-__Understanding how the brain acquires knowledge__ is one of the most important foundations of modern education. This chapter introduces the core principles that underpin effective learning strategies used by students, educators, and researchers worldwide.
+__Understanding how the brain acquires knowledge__ is one of the most important foundations of modern education. This chapter introduces the core principles that underpin effective learning strategies used by students, educators, and researchers worldwide. For more deep dives into these topics, visit [SkillBinder](https://skillbinder.com).
 
 ## What Is Learning?
 
@@ -2046,6 +2048,8 @@ Learning is the process by which new information is **encoded**, stored, and lat
 ### Declarative vs. Procedural Memory
 
 *Declarative memory* stores facts and events — things you can consciously recall and describe. *Procedural memory* stores skills and habits — actions you perform without conscious effort, like riding a bicycle.
+
+***
 
 Key distinctions between the two:
 - Declarative memory is __explicit__ — consciously accessible
@@ -2073,6 +2077,14 @@ The **spacing effect** is one of the most robust findings in learning science. D
 **Cognitive Load Theory** (CLT), developed by __John Sweller__ in the 1980s, explains why instructional design profoundly affects learning outcomes. Understanding CLT helps educators structure information so that the *working memory* is not overwhelmed.
 
 ## The Three Types of Cognitive Load
+
+| Load Type | Description | Goal in Design |
+|---|---|---|
+| **Intrinsic** | Inherent complexity of the material itself | Manage and sequence appropriately |
+| **Extraneous** | Unnecessary load caused by poor instructional design | Eliminate or minimize |
+| **Germane** | Productive load devoted to building schemas | Maximize to foster deep learning |
+
+***
 
 ### Intrinsic Load
 
@@ -2105,6 +2117,16 @@ For **novice learners**, worked examples dramatically reduce extraneous load by 
 # Chapter 3: Memory Systems and Consolidation
 
 Human memory is not a single system but a **collection of interacting processes** spanning multiple brain regions. __Understanding these systems__ allows us to design learning experiences that exploit each one effectively.
+
+## Memory Systems Overview
+
+| System | Duration | Capacity Limit | Primary Function |
+|---|---|---|---|
+| Sensory | 250ms – 4s | Very High | Briefly hold raw perception |
+| Working | 15 – 30s | ~4 Chunks | Active cognitive processing |
+| Long-Term | Lifetime | Unlimited | Permanent knowledge storage |
+
+***
 
 ## Sensory Memory
 
@@ -2139,6 +2161,8 @@ Information moves from working memory to **long-term memory** through a process 
 
 No account of learning is complete without addressing **motivation** — the engine that drives engagement, persistence, and *deep processing*. __Self-Determination Theory__ (SDT), developed by Deci and Ryan, provides the most empirically supported framework.
 
+***
+
 ## The Three Basic Psychological Needs
 
 SDT identifies three universal psychological needs whose satisfaction *predicts* intrinsic motivation across cultures:
@@ -2161,7 +2185,7 @@ __Autonomy__ is the need to feel that one's actions are *self-endorsed* and voli
 
 ### Relatedness
 
-**Relatedness** is the need to feel __connected__ to others who care about one's learning. Even in self-directed learning, *social belonging* powerfully predicts engagement and retention.
+**Relatedness** is the need to feel __connected__ to others who care about ones learning. Even in self-directed learning, *social belonging* powerfully predicts engagement and retention.
 
 ---
 
@@ -2169,19 +2193,47 @@ __Autonomy__ is the need to feel that one's actions are *self-endorsed* and voli
 
 *Metacognition* — __thinking about one's own thinking__ — is one of the highest-leverage skills a learner can develop. **Self-regulated learners** plan, monitor, and evaluate their own comprehension in ways that dramatically improve outcomes.
 
-| Strategy | Description | Effectiveness |
+## Strategic Effectiveness Tracker
+
+| Strategy | Description | Scientific Effectiveness |
 |---|---|---|
-| Retrieval Practice | Testing oneself on material | **High** |
-| Spaced Repetition | Reviewing over increasing intervals | **High** |
-| Elaborative Interrogation | Generating explanations for facts | Moderate |
-| Rereading | Passively reviewing text | Low |
-| Highlighting | Marking text while reading | Low |
+| Retrieval Practice | Testing oneself on previously learned material | **High** |
+| Spaced Repetition | Reviewing concepts over increasing time intervals | **High** |
+| Elaborative Interrogation | Generating deep "why" explanations for facts | Moderate |
+| Passive Rereading | Simply reading text multiple times | Low |
+| Massed Highlighting | Marking large blocks of text while reading | Low |
+
+***
+
+## Planning
+
+Before beginning a learning task, effective learners:
+- **Activate prior knowledge** by asking what they already know
+- Set *specific, measurable* goals for the session
+- Choose __appropriate strategies__ given the material type
+- Estimate *time requirements* and schedule accordingly
+
+## Monitoring
+
+During learning, metacognitive monitoring involves:
+- Checking comprehension by **generating questions** about the content
+- Noticing *confusion signals* — slowed reading, inability to paraphrase
+- __Evaluating__ whether current strategies are working
+- Adjusting pace and approach when *understanding breaks down*
+
+## Evaluation
+
+After learning, strong self-regulators:
+- Test themselves using **retrieval practice** rather than re-reading
+- Compare performance against *stated goals*
+- Identify __specific gaps__ for future study
+- Reflect on which strategies were **most and least effective**
 
 ---
 
 # Chapter 6: Instructional Design Principles
 
-Translating learning science into *effective teaching materials* requires deliberate design. This chapter surveys the most important principles derived from **cognitive and educational research**.
+Translating learning science into *effective teaching materials* requires deliberate design. This chapter surveys the most important principles derived from **cognitive and educational research**. Find more resources at [The Learning Scientists](https://www.learningscientists.org/).
 
 ## Multimedia Learning
 
@@ -2202,6 +2254,15 @@ Break complex lessons into *learner-paced segments* rather than presenting infor
 ---
 
 ## Feedback Design
+
+| Feedback Type | Focus | Best Application |
+|---|---|---|
+| **Corrective** | Identifying the right or wrong answer | Simple factual recall |
+| **Elaborative** | Explaining the reasoning behind the answer | Complex conceptual tasks |
+| **Immediate** | Correcting errors immediately | Early stage procedural skills |
+| **Delayed** | Providing feedback after a time gap | Fostering long-term retention |
+
+***
 
 *Effective feedback* is one of the most powerful instructional variables. Research distinguishes between:
 - **Corrective feedback** — telling learners what the correct answer is
@@ -2251,6 +2312,8 @@ Goal-setting, self-assessment, and *learning logs* shift learners from **passive
 
 Digital technology has transformed the *landscape of education*. Used well, technology can **personalise, extend, and enrich** learning in ways impossible in traditional classrooms.
 
+***
+
 ## Adaptive Learning Systems
 
 **Adaptive learning platforms** use algorithms — increasingly powered by *machine learning* — to:
@@ -2283,9 +2346,17 @@ Despite their promise, adaptive systems have significant constraints:
 
 A truly effective learning environment must be *equitable and inclusive* — designed so that **all learners** can fully participate and thrive regardless of background, identity, or ability.
 
-## Universal Design for Learning
+## Universal Design for Learning (UDL)
 
-__Universal Design for Learning__ (UDL) provides a framework for designing instruction that is *accessible from the outset* rather than retrofitted for specific needs:
+| UDL Principle | Core Philosophy | Example Application |
+|---|---|---|
+| **Representation** | Provide multiple formats for content delivery | Text, audio, and visual diagrams |
+| **Action & Expression** | Allow varied ways to demonstrate knowledge | Essays, presentations, or portfolios |
+| **Engagement** | Offer choices to tap into personal interests | Autonomous project selection |
+
+***
+
+__Universal Design for Learning__ provides a framework for designing instruction that is *accessible from the outset* rather than retrofitted for specific needs:
 
 ### Multiple Means of Representation
 
@@ -2353,11 +2424,11 @@ The learner who masters:
 - __Adaptive help-seeking__ and collaborative learning
 - *Growth mindset* and resilience in the face of difficulty
 
-...is equipped not merely for academic success, but for a **lifetime of flourishing** in an unpredictable world.
+...is equipped not merely for academic success, but for a **lifetime of flourishing** in an unpredictable world. Have questions or feedback? Connect with us anytime via our [Contact Page](https://skillbinder.com/contact).
 
 ---
 
-*This textbook was generated to demonstrate the typesetting capabilities of PageForge by SkillBinder. All ten chapters showcase __bold__, *italic*, and underlined text, bullet lists, horizontal rules, and multi-level headings — all rendered faithfully in the exported PDF.*`;
+*This textbook was generated to demonstrate the typesetting capabilities of **PageForge** by __SkillBinder__. All ten chapters showcase **bold**, *italic*, and __underlined__ text, [hyperlinks](https://skillbinder.com), data tables, bullet lists, full width horizontal rules, partial width \`***\` dividers, and multi-level headings — all rendered faithfully in the exported PDF.*`;
     updatePreview();
   </script>
 
