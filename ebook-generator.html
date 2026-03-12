@@ -1856,7 +1856,7 @@
           }
 
           if (tok.type === 'ch') {
-            if (doChBreak && hasSeenChapter) newPage();
+            if (doChBreak && hasSeenChapter && y > mT) newPage();
 
             // Fallback: If no custom [TOC] tag is anywhere in the doc, insert it before the first chapter
             if (!hasCustomToc && !hasSeenChapter && doToc && !tocPage) {
