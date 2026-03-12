@@ -4096,7 +4096,8 @@ The learner who masters:
           // Fallback: If no team exists, create one now (covers legacy / manual upgrades)
           const { data: newTeam, error: insertErr } = await sbClient.from('teams').insert({ owner_id: currentUser.id }).select('id').single();
           if (insertErr || !newTeam) {
-            listEl.innerHTML = '<div style="font-size:0.8rem; color:#666; text-align:center; padding:1rem;">Error initializing team.</div>';
+            const msg = insertErr?.message || 'Unknown network logic/RLS error';
+            listEl.innerHTML = `<div style="font-size:0.8rem; color:red; text-align:center; padding:1rem;">Error initializing team: ${msg}</div>`;
             return;
           }
           teamData = newTeam;
@@ -4145,7 +4146,9 @@ The learner who masters:
           // Fallback: If no team exists, create one now 
           const { data: newTeam, error: insertErr } = await sbClient.from('teams').insert({ owner_id: currentUser.id }).select('id').single();
           if (insertErr || !newTeam) {
-            errEl.textContent = 'Error initializing team.'; errEl.classList.add('show'); return;
+            errEl.textContent = 'Error initializing team: ' + (insertErr?.message || 'Unknown');
+            errEl.classList.add('show');
+            return;
           }
           teamData = newTeam;
         }
