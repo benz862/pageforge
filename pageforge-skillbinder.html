@@ -1800,8 +1800,11 @@
             <code>[Label](url)</code> — Link<br>
             <code>____</code> — Fill-in blank line<br>
             <code>____</code> — Fill-in blank line<br>
-            <code>[TOC]</code> — Table of Contents<br>
             <code>[PAGEBREAK]</code> — Manual page break<br>
+            <code>[TOC]</code> — Table of Contents<br>
+            <code>[ROMAN]</code> — Start roman numerals (i, ii..)<br>
+            <code>[NUMBER]</code> — Start normal numbering (1, 2..)<br>
+            <code>[NUMBER 6]</code> — Start numbering at specific number<br>
             Blank line = new paragraph
           </p>
           <p style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid var(--rule);">
@@ -2227,6 +2230,13 @@
         else if (t === '***') { flush(); tokens.push({ type: 'hr-partial' }); }
         else if (t.toUpperCase() === '[TOC]') { flush(); tokens.push({ type: 'toc' }); }
         else if (t.toUpperCase() === '[PAGEBREAK]') { flush(); tokens.push({ type: 'pagebreak' }); }
+        else if (t.toUpperCase() === '[ROMAN]') { flush(); tokens.push({ type: 'roman' }); }
+        else if (t.toUpperCase() === '[NUMBER]') { flush(); tokens.push({ type: 'number', val: 1 }); }
+        else if (/^\[NUMBER\s+(\d+)\]$/i.test(t)) {
+          flush();
+          const match = t.match(/^\[NUMBER\s+(\d+)\]$/i);
+          tokens.push({ type: 'number', val: parseInt(match[1]) });
+        }
         else if (/^[-*] \[([ xX])\] /.test(t)) {
           flush();
           const checked = t[3].toLowerCase() === 'x';
@@ -2442,6 +2452,8 @@
         else if (tok.type === 'hr') h += `<hr class="preview-hr"/>`;
         else if (tok.type === 'hr-partial') h += `<hr class="preview-hr preview-hr-partial"/>`;
         else if (tok.type === 'pagebreak') h += `<div style="text-align:center; padding:10px 0; margin:20px 0; background-color:#f8fafc; border-top:1px dashed #ccd4de; border-bottom:1px dashed #ccd4de; color:#6b8099; font-size:0.8rem; font-weight:600; letter-spacing:0.05em;">----- PAGE BREAK -----</div>`;
+        else if (tok.type === 'roman') h += `<div style="text-align:center; padding:5px 0; margin:10px 0; background-color:#eef2f6; border:1px dashed #ccd4de; color:#6b8099; font-size:0.75rem; font-weight:600;"><i class="fas fa-file-alt" style="margin-right:6px;"></i>Page Numbering: Roman Numerals</div>`;
+        else if (tok.type === 'number') h += `<div style="text-align:center; padding:5px 0; margin:10px 0; background-color:#eef2f6; border:1px dashed #ccd4de; color:#6b8099; font-size:0.75rem; font-weight:600;"><i class="fas fa-file-alt" style="margin-right:6px;"></i>Page Numbering: Arabic from ${tok.val}</div>`;
         else if (tok.type === 'toc') {
           h += `<div style="margin:2rem 0; padding:1.5rem; background:#f8fafc; border:1px dashed #ccd4de; border-radius:6px;">
                   <div style="font-weight:700; color:#1d3a52; margin-bottom:1rem; font-size:1.1rem;">Table of Contents (Auto-Generated in PDF)</div>
@@ -2684,6 +2696,20 @@
 
           if (tok.type === 'pagebreak') {
             newPage();
+            continue;
+          }
+
+          if (tok.type === 'roman') {
+            pageNumStyle = 'roman-arabic';
+            bodyStarted = false;
+            romanPageNum = 1;
+            continue;
+          }
+
+          if (tok.type === 'number') {
+            bodyStarted = true;
+            arabicPageNum = tok.val;
+            globalArabicNum = tok.val;
             continue;
           }
 
