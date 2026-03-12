@@ -3459,6 +3459,9 @@ The learner who masters:
     let sbClient = null;
     let currentUser = null;
     let currentTier = 'free';
+    let currentUserFirstName = '';
+    let currentBuildCount = 0;
+    let maxBuildCount = 3;
     let authMode = 'signin';
     let isDemoMode = false;
 
@@ -3509,19 +3512,34 @@ The learner who masters:
       try {
         const { data, error } = await sbClient
           .from('user_tiers')
-          .select('tier')
+          .select('tier, first_name')
           .eq('user_id', currentUser.id)
           .single();
         if (data && !error) {
           currentTier = data.tier || 'free';
+          currentUserFirstName = data.first_name || '';
         } else {
           // First login — create free tier record
           await sbClient.from('user_tiers').upsert({ user_id: currentUser.id, tier: 'free' });
           currentTier = 'free';
+          currentUserFirstName = '';
         }
       } catch (e) {
         currentTier = 'free';
+        currentUserFirstName = '';
       }
+
+      try {
+        const { data, error } = await sbClient
+          .from('build_limits')
+          .select('*')
+          .eq('user_id', currentUser.id)
+          .single();
+        if (data && !error) {
+          currentBuildCount = data.build_count || 0;
+          maxBuildCount = data.max_builds || 3;
+        }
+      } catch (e) { }
     }
 
     // ── DEMO BANNER ───────────────────────────────────────────────────────────────
@@ -3586,12 +3604,23 @@ The learner who masters:
         if (huInfo) huInfo.style.display = 'none';
       } else {
         const email = currentUser.email || '';
-        const short = email.split('@')[0];
+        const short = currentUserFirstName ? currentUserFirstName : email.split('@')[0];
         const tierLabel = currentTier.charAt(0).toUpperCase() + currentTier.slice(1);
+
+        let limitText = '';
+        if (maxBuildCount === -1) {
+          limitText = `<span style="margin-right:0.75rem; color:var(--gold-light); font-size:0.72rem; letter-spacing:0.02em;">Unlimited exports</span>`;
+        } else {
+          limitText = `<span style="margin-right:0.75rem; color:var(--gold-light); font-size:0.72rem; letter-spacing:0.02em;">${currentBuildCount}/${maxBuildCount} exports this month</span>`;
+        }
+
         const upgrade = currentTier === 'free' || currentTier === 'starter'
           ? `<button class="btn-upgrade" onclick="openPricing()">⬆ Upgrade</button>` : '';
+
         el.innerHTML = `
-      <div class="user-badge">
+      <div class="user-badge" style="display:flex; align-items:center; gap:0.6rem;">
+        ${limitText}
+        <span style="margin-right:0.25rem;">Welcome, <strong style="color:#fff;">${short}</strong></span>
         <button class="btn-signout" onclick="signOut()">Sign Out</button>
         ${upgrade}
       </div>`;
