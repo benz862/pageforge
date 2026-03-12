@@ -55,14 +55,10 @@ CREATE POLICY "Team owners can manage their team"
   USING (auth.uid() = owner_id);
 
 DROP POLICY IF EXISTS "Team members can view their team" ON public.teams;
-CREATE POLICY "Team members can view their team"
+DROP POLICY IF EXISTS "Anyone can view teams" ON public.teams;
+CREATE POLICY "Anyone can view teams"
   ON public.teams FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.team_members
-      WHERE team_id = public.teams.id AND user_id = auth.uid()
-    )
-  );
+  USING (auth.role() = 'authenticated');
 
 -- ── 4. Helper Function/View for effective tier ──────────────────────────────
 -- This securely determines whether the user is a publisher directly, or
