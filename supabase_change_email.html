@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirm your PageForge signup</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8fafc;
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            color: #1e293b;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .wrapper {
+            width: 100%;
+            table-layout: fixed;
+            background-color: #f8fafc;
+            padding: 40px 0;
+        }
+
+        .main {
+            background-color: #ffffff;
+            margin: 0 auto;
+            width: 100%;
+            max-width: 600px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+        }
+
+        .header {
+            padding: 30px 40px 20px;
+            text-align: center;
+        }
+
+        .header img {
+            max-height: 80px;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .content {
+            padding: 20px 40px 40px;
+        }
+
+        h2 {
+            margin-top: 0;
+            color: #1d3a52;
+            /* PageForge Navy */
+            font-size: 24px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        p {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #475569;
+            margin: 0 0 24px 0;
+        }
+
+        .button-container {
+            text-align: center;
+            margin: 32px 0;
+        }
+
+        .button {
+            background-color: #d4af37;
+            /* PageForge Gold */
+            color: #ffffff;
+            text-decoration: none;
+            padding: 14px 28px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 16px;
+            display: inline-block;
+        }
+
+        .button:hover {
+            background-color: #c4a132;
+        }
+
+        .footer {
+            padding: 20px 40px 30px;
+            text-align: center;
+            background-color: #f1f5f9;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .footer p {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 0;
+        }
+
+        .fallback {
+            font-size: 13px;
+            color: #94a3b8;
+            word-break: break-all;
+        }
+    </style>
+</head>
+
+<body>
+    <center class="wrapper">
+        <table class="main" width="100%" cellpadding="0" cellspacing="0" role="presentation">
+            <tr>
+                <td class="header">
+                    <img src="https://ewqubxcuccukmodbtoah.supabase.co/storage/v1/object/public/images/PageForge%20Logo%20Vertical.png"
+                        alt="PageForge Logo" style="max-height: 80px;">
+                </td>
+            </tr>
+            <tr>
+                <td class="content">
+                    <h2>Confirm Change of Email</h2>
+          <p>You requested to update your PageForge email address from <strong>{{ .Email }}</strong> to <strong>{{ .NewEmail }}</strong>. Follow the link below to confirm this change.</p>
+          
+          <div class="button-container">
+            <!-- Supabase Template Variable -->
+            <a href="{{ .ConfirmationURL }}" class="button" style="color: #ffffff;">Change Email</a>
+          </div>
+          
+          <p>If you didn't request this change, you can safely ignore this email and your account will remain secure.</p>
+          
+          <p class="fallback" style="margin-top: 40px;">
+            If the button doesn't work, copy and paste this link into your browser:<br>
+            <a href="{{ .ConfirmationURL }}" style="color: #1d3a52; text-decoration: underline;">{{ .ConfirmationURL }}</a>
+          </p>
+                </td>
+            </tr>
+            <tr>
+                <td class="footer">
+                    <p>Powered by SkillBinder&nbsp; • &nbsp;PageForge</p>
+                </td>
+            </tr>
+        </table>
+    </center>
+</body>
+
+</html>
