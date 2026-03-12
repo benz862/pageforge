@@ -1091,7 +1091,9 @@
             <code>*italic*</code> — Italic<br>
             <code>__underline__</code> — Underline<br>
             <code>- item</code> or <code>* item</code> — Bullet<br>
-            <code>---</code> — Horizontal rule<br>
+            <code>---</code> — Full Rule<br>
+            <code>***</code> — 75% Rule<br>
+            <code>[Label](url)</code> — Link<br>
             Blank line = new paragraph
           </p>
         </div>
@@ -1324,36 +1326,63 @@
       return t
         .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
         .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" style="color:var(--navy);text-decoration:underline;">$1</a>')
         .replace(/__(.+?)__/g, '<u>$1</u>');
     }
 
-    // Parse inline segments for PDF rendering (bold, italic, underline)
+    // Parse inline segments for PDF rendering (bold, italic, underline, links)
     function parseInlineSegments(text) {
       const segs = [];
-      // Tokenise by bold, italic, underline markers
-      const re = /\*\*(.+?)\*\*|\*(.+?)\*|__(.+?)__|([^*_]+)/g;
+      // Tokenise by bold, italic, link, underline
+      const re = /\*\*(.+?)\*\*|\*(.+?)\*|\[([^\]]+)\]\(([^)]+)\)|__(.+?)__|([^*_\[]+)/g;
       let m;
       while ((m = re.exec(text)) !== null) {
-        if (m[1] !== undefined) segs.push({ text: m[1], bold: true, italic: false, underline: false });
-        else if (m[2] !== undefined) segs.push({ text: m[2], bold: false, italic: true, underline: false });
-        else if (m[3] !== undefined) segs.push({ text: m[3], bold: false, italic: false, underline: true });
-        else if (m[4] !== undefined) segs.push({ text: m[4], bold: false, italic: false, underline: false });
+        if (m[1] !== undefined) segs.push({ text: m[1], bold: true, italic: false, underline: false, url: null });
+        else if (m[2] !== undefined) segs.push({ text: m[2], bold: false, italic: true, underline: false, url: null });
+        else if (m[3] !== undefined) segs.push({ text: m[3], url: m[4], bold: false, italic: false, underline: true });
+        else if (m[5] !== undefined) segs.push({ text: m[5], bold: false, italic: false, underline: true, url: null });
+        else if (m[6] !== undefined) segs.push({ text: m[6], bold: false, italic: false, underline: false, url: null });
       }
       return segs.filter(s => s.text.length > 0);
     }
 
     // Draw a line of text with mixed bold/italic/underline segments
-    function drawInlineLine(doc, segments, x, y, baseFontPdf, baseSz) {
+    function drawInlineLine(doc, segments, x, y, baseFontPdf, baseSz, baseColorRGB) {
       let cx = x;
       for (const seg of segments) {
+        if (seg.blank) {
+          // Draw a solid fill-in line — width proportional to number of underscores
+          const blankW = (seg.blankLen || 8) * baseSz * 0.352778 * 0.48;
+          const lineY = y + 0.8;
+          doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.35);
+          doc.line(cx, lineY, cx + blankW, lineY);
+          doc.setLineWidth(0.2);
+          cx += blankW;
+          continue;
+        }
         const st = seg.bold && seg.italic ? 'bolditalic' : seg.bold ? 'bold' : seg.italic ? 'italic' : 'normal';
         doc.setFont(baseFontPdf, st);
         doc.setFontSize(baseSz);
+
+        // Color links navy, otherwise inherit
+        if (seg.url) doc.setTextColor(29, 58, 82);
+        else if (baseColorRGB) doc.setTextColor(baseColorRGB[0], baseColorRGB[1], baseColorRGB[2]);
+        else doc.setTextColor(0, 0, 0);
+
         doc.text(seg.text, cx, y);
         const w = doc.getStringUnitWidth(seg.text) * baseSz * 0.352778;
+
+        // Render clickable bounding box
+        if (seg.url) {
+          const h = baseSz * 0.352778;
+          doc.link(cx, y - h * 0.8, w, h, { url: seg.url });
+        }
+
         if (seg.underline) {
           const uY = y + 0.6;
-          doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.2);
+          if (seg.url) doc.setDrawColor(29, 58, 82); // underline links navy too
+          else doc.setDrawColor(0, 0, 0);
+          doc.setLineWidth(0.2);
           doc.line(cx, uY, cx + w, uY);
         }
         cx += w;
@@ -1382,7 +1411,7 @@
           if (!word) {
             // If it's an empty string from split, it means there was multiple spaces. Add space width.
             if (curW > 0 && curW + spW <= maxW) {
-              curLine.push({ text: ' ', bold: seg.bold, italic: seg.italic, underline: seg.underline });
+              curLine.push({ text: ' ', bold: seg.bold, italic: seg.italic, underline: seg.underline, url: seg.url });
               curW += spW;
             }
             continue;
@@ -1399,11 +1428,11 @@
 
           // If we aren't at the start of a line, we need to push an unformatted space first
           if (curW > 0) {
-            curLine.push({ text: ' ', bold: seg.bold, italic: seg.italic, underline: seg.underline });
+            curLine.push({ text: ' ', bold: seg.bold, italic: seg.italic, underline: seg.underline, url: seg.url });
             curW += spW;
           }
 
-          curLine.push({ text: word, bold: seg.bold, italic: seg.italic, underline: seg.underline });
+          curLine.push({ text: word, bold: seg.bold, italic: seg.italic, underline: seg.underline, url: seg.url });
           curW += ww;
         }
       }
@@ -1715,7 +1744,7 @@
             const bLines = wrapInlineSegments(doc, bSegs, bulletW, bPdf, fontSize);
             for (let li = 0; li < bLines.length; li++) {
               if (li > 0) { y += lh(fontSize); if (y + lh(fontSize) > safeBottom) newPage(); }
-              drawInlineLine(doc, bLines[li], li === 0 ? textX : textX, y, bPdf, fontSize);
+              drawInlineLine(doc, bLines[li], li === 0 ? textX : textX, y, bPdf, fontSize, bodyRGB);
             }
             y += lh(fontSize) + paraGap * 0.5;
             doc.setTextColor(0, 0, 0);
@@ -1728,7 +1757,7 @@
             const pLines = wrapInlineSegments(doc, segs, pw2, bPdf, fontSize);
             for (const pl of pLines) {
               if (y + lh(fontSize) > safeBottom) newPage();
-              drawInlineLine(doc, pl, xp, y, bPdf, fontSize);
+              drawInlineLine(doc, pl, xp, y, bPdf, fontSize, bodyRGB);
               y += lh(fontSize);
             }
             y += paraGap;
