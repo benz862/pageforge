@@ -1077,6 +1077,26 @@
               </div>
             </div>
 
+            <!-- Vertical Alignment -->
+            <div class="row-2" style="margin-top:0.6rem;">
+              <div class="field">
+                <label>Header V-Align</label>
+                <select id="tblHeadValign">
+                  <option value="top">Top</option>
+                  <option value="middle" selected>Middle</option>
+                  <option value="bottom">Bottom</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Body V-Align</label>
+                <select id="tblBodyValign">
+                  <option value="top">Top</option>
+                  <option value="middle" selected>Middle</option>
+                  <option value="bottom">Bottom</option>
+                </select>
+              </div>
+            </div>
+
             <!-- Background Colors -->
             <div class="field" style="margin-top:0.6rem;">
               <label>Backgrounds</label>
@@ -1560,6 +1580,8 @@
         tblColor: g('tblColor').value,
         tblHeadAlign: g('tblHeadAlign').value,
         tblBodyAlign: g('tblBodyAlign').value,
+        tblHeadValign: g('tblHeadValign').value,
+        tblBodyValign: g('tblBodyValign').value,
         tblHeadBg: g('tblHeadBg').value,
         tblEvenBg: g('tblEvenBg').value,
         tblOddBg: g('tblOddBg').value,
@@ -1592,8 +1614,8 @@
     #previewPane .preview-author     { font-family: ${s.bInfo.css} !important; color: ${s.h2Color} !important; }
     #previewPane .preview-h2         { font-family: ${s.h2Info.css} !important; color: ${s.h2Color} !important; }
     #previewPane .preview-h3         { font-family: ${s.h3Info.css} !important; color: ${s.h3Color} !important; }
-    #previewPane table td { font-family: ${s.tblInfo.css} !important; color: ${s.tblColor} !important; text-align: ${s.tblBodyAlign} !important; }
-    #previewPane table th { font-family: ${s.tblInfo.css} !important; color: white !important; text-align: ${s.tblHeadAlign} !important; background-color: ${s.tblHeadBg} !important; }
+    #previewPane table td { font-family: ${s.tblInfo.css} !important; color: ${s.tblColor} !important; text-align: ${s.tblBodyAlign} !important; vertical-align: ${s.tblBodyValign} !important; }
+    #previewPane table th { font-family: ${s.tblInfo.css} !important; color: white !important; text-align: ${s.tblHeadAlign} !important; vertical-align: ${s.tblHeadValign} !important; background-color: ${s.tblHeadBg} !important; }
     #previewPane table tr:nth-child(even) td { background-color: ${s.tblEvenBg} !important; }
     #previewPane table tr:nth-child(odd) td { background-color: ${s.tblOddBg} !important; }
   `;
@@ -1953,8 +1975,18 @@
                       drawX = cx + colW - cellPadX - lineWidth;
                     }
 
+                    const activeValign = isHeader ? tblHeadValign : tblBodyValign;
+                    let blockY = rowTop + cellPadY;
+                    const contentH = lines.length * lh(tblSize);
+                    if (activeValign === 'middle') {
+                      blockY = rowTop + (rowH - contentH) / 2;
+                    } else if (activeValign === 'bottom') {
+                      blockY = rowTop + rowH - cellPadY - contentH;
+                    }
+                    const drawY = blockY + lh(tblSize) * 0.82 + li * lh(tblSize);
+
                     const tc = isHeader ? [255, 255, 255] : tblRGB;
-                    drawInlineLine(doc, lineSegs, drawX, rowTop + cellPadY + lh(tblSize) * 0.82 + li * lh(tblSize), tblPdf, tblSize, tc);
+                    drawInlineLine(doc, lineSegs, drawX, drawY, tblPdf, tblSize, tc);
                   }
                 }
                 y += rowH;
