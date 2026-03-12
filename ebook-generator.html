@@ -1895,14 +1895,17 @@
               sf(tblPdf, 'normal', tblSize);
 
               for (let ri = 0; ri < rows.length; ri++) {
-                const isHeader = ri === 0;
+                const isHeader = (ri === 0);
                 // Pre-calculate row height by wrapping all cells
                 const wrappedCells = [];
                 let maxLines = 1;
                 for (let ci = 0; ci < colCount; ci++) {
                   const cellText = rows[ri][ci] || '';
-                  sf(tblPdf, isHeader ? 'bold' : 'normal', tblSize);
-                  const wrapped = doc.splitTextToSize(cellText, colW - cellPadX * 2);
+                  const segs = parseInlineSegments(cellText);
+                  if (isHeader) {
+                    segs.forEach(s => s.bold = true); // Force header text to bold
+                  }
+                  const wrapped = wrapInlineSegments(doc, segs, colW - cellPadX * 2, tblPdf, tblSize);
                   wrappedCells.push(wrapped);
                   if (wrapped.length > maxLines) maxLines = wrapped.length;
                 }
@@ -1927,24 +1930,31 @@
                   // Border
                   doc.setDrawColor(180, 190, 200); doc.setLineWidth(0.25);
                   doc.rect(cx, rowTop, colW, rowH);
+
                   // Text — each wrapped line
-                  if (isHeader) { sf(tblPdf, 'bold', tblSize); doc.setTextColor(255, 255, 255); }
-                  else { sf(tblPdf, 'normal', tblSize); doc.setTextColor(tblRGB[0], tblRGB[1], tblRGB[2]); }
                   const lines = wrappedCells[ci];
                   for (let li = 0; li < lines.length; li++) {
+                    const lineSegs = lines[li];
+                    let lineWidth = 0;
+
+                    // calculate total length for alignment
+                    for (const seg of lineSegs) {
+                      doc.setFont(tblPdf, (seg.bold && seg.italic) ? 'bolditalic' : seg.bold ? 'bold' : seg.italic ? 'italic' : 'normal');
+                      doc.setFontSize(tblSize);
+                      lineWidth += doc.getTextWidth(seg.text);
+                    }
+
                     let drawX = cx + cellPadX;
-                    let align = 'left';
                     const activeAlign = isHeader ? tblHeadAlign : tblBodyAlign;
 
                     if (activeAlign === 'center') {
-                      drawX = cx + (colW / 2);
-                      align = 'center';
+                      drawX = cx + (colW - lineWidth) / 2;
                     } else if (activeAlign === 'right') {
-                      drawX = cx + colW - cellPadX;
-                      align = 'right';
+                      drawX = cx + colW - cellPadX - lineWidth;
                     }
 
-                    doc.text(lines[li], drawX, rowTop + cellPadY + lh(tblSize) * 0.82 + li * lh(tblSize), { align: align });
+                    const tc = isHeader ? [255, 255, 255] : tblRGB;
+                    drawInlineLine(doc, lineSegs, drawX, rowTop + cellPadY + lh(tblSize) * 0.82 + li * lh(tblSize), tblPdf, tblSize, tc);
                   }
                 }
                 y += rowH;
