@@ -1885,6 +1885,26 @@
         let hasSeenChapter = false;
         let hasManualNumbering = false;
         let tocPage = null;
+        let firstTocY = null;
+
+        function reserveTocPages(startY) {
+          let dummyY = startY;
+          const maxY = ph - mB - 4;
+          let pagesNeeded = 1;
+          const tocItems = parsedTokens.filter(t => t.type === 'ch' || t.type === 'h2' || t.type === 'h3');
+          for (const item of tocItems) {
+            const sz = item.type === 'ch' ? fontSize + 1 : item.type === 'h2' ? fontSize : fontSize - 0.5;
+            const rowH = lh(sz) * 1.4;
+            if (dummyY + rowH > maxY) {
+              pagesNeeded++;
+              dummyY = mT + lh(chSize) + 6;
+            }
+            dummyY += rowH;
+          }
+          for (let i = 0; i < pagesNeeded; i++) {
+            newPage();
+          }
+        }
 
         for (const tok of parsedTokens) {
 
@@ -1921,7 +1941,8 @@
               tc(chRGB);
               doc.text('Table of Contents', mL, y);
               y += lh(chSize) + 5;
-              newPage(); // TOC gets its own page break
+              firstTocY = y;
+              reserveTocPages(firstTocY);
             }
 
             hasSeenChapter = true;
@@ -1989,7 +2010,8 @@
               tc(chRGB);
               doc.text('Table of Contents', mL, y);
               y += lh(chSize) + 5;
-              newPage(); // reserve page for TOC
+              firstTocY = y;
+              reserveTocPages(firstTocY);
             }
             continue; // Exit iteration so Table of Contents can be rendered later
 
@@ -2126,20 +2148,26 @@
         addPageNum();
 
         // FILL TOC
-        if (doToc && tocEntries.length) {
+        if (doToc && tocEntries.length && tocPage) {
           doc.setPage(tocPage);
-          let ty = mT + lh(chSize) + 6;
+          let ty = firstTocY || (mT + lh(chSize) + 6);
           const maxY = ph - mB - 4;
 
           for (const e of tocEntries) {
-            if (ty > maxY) break;
             const sz = e.level === 1 ? fontSize + 1 : e.level === 2 ? fontSize : fontSize - 0.5;
+            const rowH = lh(sz) * 1.4;
+
+            if (ty + rowH > maxY) {
+               tocPage++;
+               doc.setPage(tocPage);
+               ty = mT + lh(chSize) + 6;
+            }
+
             const style = e.level === 1 ? 'bold' : 'normal';
             const fontP = e.level === 1 ? chPdf : e.level === 2 ? h2Pdf : h3Pdf;
             const rgb = e.level === 1 ? chRGB : e.level === 2 ? h2RGB : h3RGB;
             const xo = mL + (e.level - 1) * 5;
             const ew = textW - (e.level - 1) * 5 - 14;
-            const rowH = lh(sz) * 1.4;
 
             sf(fontP, style, sz);
             let label = e.text;
