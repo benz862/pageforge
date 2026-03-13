@@ -1192,7 +1192,6 @@
             <code>***</code> — 75% Rule<br>
             <code>[Label](url)</code> — Link<br>
             <code>____</code> — Fill-in blank line<br>
-            <code>____</code> — Fill-in blank line<br>
             <code>[PAGEBREAK]</code> — Manual page break<br>
             <code>[TOC]</code> — Table of Contents<br>
             <code>[ROMAN]</code> — Start roman numerals (i, ii..)<br>
@@ -1494,8 +1493,8 @@
       let cx = x;
       for (const seg of segments) {
         if (seg.blank) {
-          // Draw a solid fill-in line — width proportional to number of underscores
-          const blankW = (seg.blankLen || 8) * baseSz * 0.352778 * 0.48;
+          // Draw a solid fill-in line — width calculated dynamically by wrapInlineSegments
+          const blankW = seg.blankLen;
           const lineY = y + 0.8;
           doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.35);
           doc.line(cx, lineY, cx + blankW, lineY);
@@ -1543,10 +1542,18 @@
       for (const seg of segments) {
         if (seg.blank) {
           // Treat fill-in blank as a single non-breaking token
-          const blankW = (seg.blankLen || 8) * baseSz * 0.352778 * 0.48;
-          if (curW > 0 && curW + blankW > maxW) { lines.push(curLine); curLine = []; curW = 0; }
-          curLine.push({ ...seg });
-          curW += blankW;
+          let blankW = (seg.blankLen || 8) * baseSz * 0.352778 * 0.48;
+          if (curW > 0 && curW + blankW > maxW) {
+            // Clip the blank space exactly to the remaining page boundary margin
+            const remainingW = maxW - curW;
+            curLine.push({ ...seg, blankLen: remainingW });
+            lines.push(curLine);
+            curLine = [];
+            curW = 0;
+          } else {
+            curLine.push({ ...seg, blankLen: blankW });
+            curW += blankW;
+          }
           continue;
         }
         const words = seg.text.split(' ');
