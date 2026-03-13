@@ -1896,7 +1896,14 @@
           const tocItems = parsedTokens.filter(t => t.type === 'ch' || t.type === 'h2' || t.type === 'h3');
           for (const item of tocItems) {
             const sz = item.type === 'ch' ? fontSize + 1 : item.type === 'h2' ? fontSize : fontSize - 0.5;
-            const rowH = lh(sz) * 1.4;
+            const style = item.type === 'ch' ? 'bold' : 'normal';
+            const fontP = item.type === 'ch' ? chPdf : item.type === 'h2' ? h2Pdf : h3Pdf;
+            sf(fontP, style, sz);
+            const indentLvl = item.type === 'ch' ? 1 : item.type === 'h2' ? 2 : 3;
+            const ew = textW - (indentLvl - 1) * 5 - 14;
+            const lines = doc.splitTextToSize(item.text, ew);
+            const rowH = (lines.length * lh(sz)) + (lh(sz) * 0.4);
+            
             if (dummyY + rowH > maxY) {
               pagesNeeded++;
               dummyY = mT + lh(chSize) + 6;
@@ -2157,14 +2164,6 @@
 
           for (const e of tocEntries) {
             const sz = e.level === 1 ? fontSize + 1 : e.level === 2 ? fontSize : fontSize - 0.5;
-            const rowH = lh(sz) * 1.4;
-
-            if (ty + rowH > maxY) {
-               tocPage++;
-               doc.setPage(tocPage);
-               ty = mT + lh(chSize) + 6;
-            }
-
             const style = e.level === 1 ? 'bold' : 'normal';
             const fontP = e.level === 1 ? chPdf : e.level === 2 ? h2Pdf : h3Pdf;
             const rgb = e.level === 1 ? chRGB : e.level === 2 ? h2RGB : h3RGB;
@@ -2172,32 +2171,41 @@
             const ew = textW - (e.level - 1) * 5 - 14;
 
             sf(fontP, style, sz);
-            let label = e.text;
-            while (label.length > 3 && doc.getStringUnitWidth(label) * sz * 0.352778 > ew)
-              label = label.slice(0, -1);
-            if (label !== e.text) label += '…';
+            const labelLines = doc.splitTextToSize(e.text, ew);
+            const lineCount = labelLines.length;
+            const rowH = (lineCount * lh(sz)) + (lh(sz) * 0.4);
+
+            if (ty + rowH > maxY) {
+               tocPage++;
+               doc.setPage(tocPage);
+               ty = mT + lh(chSize) + 6;
+            }
 
             tc(rgb);
-            doc.text(label, xo, ty);
+            for (let i = 0; i < lineCount; i++) {
+              doc.text(labelLines[i], xo, ty + (i * lh(sz)));
+            }
 
             const pStr = e.displayPage;
             sf(bPdf, 'normal', sz);
             doc.setTextColor(140, 140, 140);
-            doc.text(pStr, mL + textW, ty, { align: 'right' });
+            
+            const bottomY = ty + ((lineCount - 1) * lh(sz));
+            doc.text(pStr, mL + textW, bottomY, { align: 'right' });
 
             // dotted leader
-            const lw = doc.getStringUnitWidth(label) * sz * 0.352778;
+            const lastLine = labelLines[lineCount - 1];
+            const lw = doc.getStringUnitWidth(lastLine) * sz * 0.352778;
             const nw = doc.getStringUnitWidth(pStr) * sz * 0.352778;
             let dx = xo + lw + 2;
             const dxEnd = mL + textW - nw - 3;
             sf(bPdf, 'normal', sz - 2);
             doc.setTextColor(180, 180, 180);
-            while (dx < dxEnd - 1.5) { doc.text('.', dx, ty); dx += 2.1; }
+            while (dx < dxEnd - 1.5) { doc.text('.', dx, bottomY); dx += 2.1; }
             doc.setTextColor(0, 0, 0);
 
             // ── Clickable link covering the full row ──
-            // ty is baseline; link box sits from (ty - rowH*0.8) to (ty + rowH*0.25)
-            const linkY = ty - rowH * 0.75;
+            const linkY = ty - lh(sz) * 0.75;
             const linkH = rowH * 0.95;
             doc.link(mL, linkY, textW, linkH, { pageNumber: e.physicalPage });
 
