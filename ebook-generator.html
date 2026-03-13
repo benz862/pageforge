@@ -1175,6 +1175,16 @@
         </div>
       </div>
 
+      <!-- PRESETS -->
+      <div class="sidebar-section">
+        <div class="section-label">Presets</div>
+        <p style="font-size:0.65rem; color:#888; margin-bottom:0.6rem; line-height:1.4;">Save your current typography, spacing, and layout settings to your browser to use automatically on your next visit.</p>
+        <div class="row-2">
+          <button class="btn-cancel" onclick="resetPreset()" style="padding: 0.35rem; font-size: 0.7rem;">Reset to Basic</button>
+          <button class="btn-confirm" onclick="savePreset()" style="padding: 0.35rem; font-size: 0.7rem;">Save as Default</button>
+        </div>
+      </div>
+
       <!-- SYNTAX REF -->
       <div class="sidebar-section">
         <div class="section-label">Markup Syntax</div>
@@ -1414,20 +1424,110 @@
     }
     function clearContent() { document.getElementById('content').value = ''; updatePreview(); }
 
+    // ─── PRESETS ──────────────────────────────────────────────────────────────────
+    function getPresetConfig() {
+      // Gather all typography and color inputs
+      const config = {};
+      const inputs = document.querySelectorAll('select, input[type="number"], input[type="color"], input[type="checkbox"]');
+      inputs.forEach(el => {
+        if (!el.id) return;
+        // Ignore file inputs and specific modal logic
+        if (el.type === 'file' || el.id.includes('replaceContent') || el.id.includes('stripFormatting')) return;
+        
+        if (el.type === 'checkbox') {
+          config[el.id] = el.checked;
+        } else {
+          config[el.id] = el.value;
+        }
+      });
+      // Save margins which are stored in mmStore regardless of current unit view
+      saveToMM();
+      config.mmStore = { ...mmStore };
+      config.currentUnit = currentUnit;
+      return config;
+    }
+
+    function savePreset() {
+      const config = getPresetConfig();
+      localStorage.setItem('pageforge_preset', JSON.stringify(config));
+      setStatus('Preset saved as default.');
+    }
+
+    function resetPreset() {
+      localStorage.removeItem('pageforge_preset');
+      if(confirm('Preset cleared. Reload page to reset to basic template values?')) {
+        window.location.reload();
+      }
+    }
+
+    function loadPreset() {
+      try {
+        const saved = localStorage.getItem('pageforge_preset');
+        if (!saved) return;
+        const config = JSON.parse(saved);
+        
+        // Restore mmStore directly
+        if (config.mmStore) {
+          Object.keys(config.mmStore).forEach(k => mmStore[k] = config.mmStore[k]);
+        }
+        
+        // Restore UI inputs
+        const inputs = document.querySelectorAll('select, input[type="number"], input[type="color"], input[type="checkbox"]');
+        inputs.forEach(el => {
+          if (!el.id || el.type === 'file' || el.id.includes('replaceContent') || el.id.includes('stripFormatting')) return;
+          if (config[el.id] !== undefined && !SPACING_FIELDS.includes(el.id)) { // Margin inputs handled by unit switcher
+            if (el.type === 'checkbox') el.checked = config[el.id];
+            else el.value = config[el.id];
+          }
+        });
+
+        // Restore unit view (this will also update the spacing fields visually based on restored mmStore)
+        if (config.currentUnit) {
+          setUnit(config.currentUnit);
+        } else {
+          setUnit('mm');
+        }
+
+        setStatus('Loaded saved preset.');
+      } catch (e) {
+        console.warn('Failed to load preset', e);
+      }
+    }
+
     // ─── PARSING ──────────────────────────────────────────────────────────────────
     function parseContent(raw) {
       const tokens = [];
       let para = [];
       let tableRows = [];
+      // Keep track of the starting line index of the current block
+      let currentIdx = 0; 
+      let tableStartIdx = 0;
 
-      function flush() { if (para.length) { tokens.push({ type: 'p', text: para.join(' ').trim() }); para = []; } }
-      function flushTable() { if (tableRows.length) { tokens.push({ type: 'table', rows: tableRows }); tableRows = []; } }
+      function flush() { 
+        if (para.length) { 
+          tokens.push({ type: 'p', text: para.join(' ').trim(), lineIdx: currentIdx }); 
+          para = []; 
+        } 
+      }
+      function flushTable() { 
+        if (tableRows.length) { 
+          tokens.push({ type: 'table', rows: tableRows, lineIdx: tableStartIdx }); 
+          tableRows = []; 
+        } 
+      }
 
-      for (const line of raw.split('\n')) {
+      const lines = raw.split('\n');
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
         const t = line.trim();
+        
+        // Update the block start index if we are starting a new paragraph
+        if (para.length === 0) currentIdx = i;
+
         // Table row detection
         if (t.startsWith('|') && t.endsWith('|')) {
           flush();
+          if (tableRows.length === 0) tableStartIdx = i;
           if (tableRows.length === 1 && /^\|(\s*:?-+:?\s*\|)+$/.test(t)) continue; // skip only the first alignment divider
           const cells = t.slice(1, -1).split('|').map(s => {
             const st = s.trim();
@@ -1438,21 +1538,21 @@
 
         if (t.startsWith('|') && t.endsWith('|')) continue;
 
-        if (t.startsWith('### ')) { flush(); tokens.push({ type: 'h3', text: t.slice(4) }); }
-        else if (t.startsWith('## ')) { flush(); tokens.push({ type: 'h2', text: t.slice(3) }); }
-        else if (t.startsWith('# ')) { flush(); tokens.push({ type: 'ch', text: t.slice(2) }); }
-        else if (t === '---') { flush(); tokens.push({ type: 'hr' }); }
-        else if (t === '***') { flush(); tokens.push({ type: 'hr-partial' }); }
-        else if (t.toUpperCase() === '[TOC]') { flush(); tokens.push({ type: 'toc' }); }
-        else if (t.toUpperCase() === '[PAGEBREAK]') { flush(); tokens.push({ type: 'pagebreak' }); }
-        else if (t.toUpperCase() === '[ROMAN]') { flush(); tokens.push({ type: 'roman' }); }
-        else if (t.toUpperCase() === '[NUMBER]') { flush(); tokens.push({ type: 'number', val: 1 }); }
+        if (t.startsWith('### ')) { flush(); tokens.push({ type: 'h3', text: t.slice(4), lineIdx: i }); }
+        else if (t.startsWith('## ')) { flush(); tokens.push({ type: 'h2', text: t.slice(3), lineIdx: i }); }
+        else if (t.startsWith('# ')) { flush(); tokens.push({ type: 'ch', text: t.slice(2), lineIdx: i }); }
+        else if (t === '---') { flush(); tokens.push({ type: 'hr', lineIdx: i }); }
+        else if (t === '***') { flush(); tokens.push({ type: 'hr-partial', lineIdx: i }); }
+        else if (t.toUpperCase() === '[TOC]') { flush(); tokens.push({ type: 'toc', lineIdx: i }); }
+        else if (t.toUpperCase() === '[PAGEBREAK]') { flush(); tokens.push({ type: 'pagebreak', lineIdx: i }); }
+        else if (t.toUpperCase() === '[ROMAN]') { flush(); tokens.push({ type: 'roman', lineIdx: i }); }
+        else if (t.toUpperCase() === '[NUMBER]') { flush(); tokens.push({ type: 'number', val: 1, lineIdx: i }); }
         else if (/^\[NUMBER\s+(\d+)\]$/i.test(t)) {
           flush();
           const match = t.match(/^\[NUMBER\s+(\d+)\]$/i);
-          tokens.push({ type: 'number', val: parseInt(match[1]) });
+          tokens.push({ type: 'number', val: parseInt(match[1]), lineIdx: i });
         }
-        else if (t.startsWith('- ') || t.startsWith('* ')) { flush(); tokens.push({ type: 'bullet', text: t.slice(2) }); }
+        else if (t.startsWith('- ') || t.startsWith('* ')) { flush(); tokens.push({ type: 'bullet', text: t.slice(2), lineIdx: i }); }
         else if (t === '') { flush(); }
         else {
           if (/^(\*\*\*|\*\*|\*)/.test(t) && para.length) flush();
@@ -1676,22 +1776,25 @@
       const tocItems = parsedTokens.filter(t => t.type === 'ch' || t.type === 'h2' || t.type === 'h3');
 
       for (const tok of parsedTokens) {
-        if (tok.type === 'ch') h += `<div class="preview-ch" onclick="scrollToEditorLine(${tok.line})" style="cursor:pointer;" title="Click to edit">${parseInlineHTML(tok.text)}</div>`;
-        else if (tok.type === 'h2') h += `<div class="preview-h2" onclick="scrollToEditorLine(${tok.line})" style="cursor:pointer;" title="Click to edit">${parseInlineHTML(tok.text)}</div>`;
-        else if (tok.type === 'h3') h += `<div class="preview-h3">${parseInlineHTML(tok.text)}</div>`;
+        // Add click listener to jump to source editor line, and styling for pointer cursor
+        const clickAttr = tok.lineIdx !== undefined ? `onclick="scrollToEditorLine(${tok.lineIdx})" style="cursor:pointer;" title="Click to view source"` : '';
+
+        if (tok.type === 'ch') h += `<div class="preview-ch" ${clickAttr}>${parseInlineHTML(tok.text)}</div>`;
+        else if (tok.type === 'h2') h += `<div class="preview-h2" ${clickAttr}>${parseInlineHTML(tok.text)}</div>`;
+        else if (tok.type === 'h3') h += `<div class="preview-h3" ${clickAttr}>${parseInlineHTML(tok.text)}</div>`;
         else if (tok.type === 'hr') {
-          h += `<hr style="border:0; border-top:1px solid var(--rule); margin:2em 0;" />`;
+          h += `<hr style="border:0; border-top:1px solid var(--rule); margin:2em 0; cursor:pointer;" onclick="scrollToEditorLine(${tok.lineIdx})" title="Click to view source" />`;
         } else if (tok.type === 'hr-partial') {
-          h += `<div style="text-align:center;"><hr class="preview-hr-partial" /></div>`;
+          h += `<div style="text-align:center; cursor:pointer;" onclick="scrollToEditorLine(${tok.lineIdx})" title="Click to view source"><hr class="preview-hr-partial" /></div>`;
         } else if (tok.type === 'pagebreak') {
-          h += `<div style="text-align:center; padding:10px 0; margin:20px 0; background-color:#f8fafc; border-top:1px dashed #ccd4de; border-bottom:1px dashed #ccd4de; color:#6b8099; font-size:0.8rem; font-weight:600; letter-spacing:0.05em;">----- PAGE BREAK -----</div>`;
+          h += `<div ${clickAttr} style="text-align:center; padding:10px 0; margin:20px 0; background-color:#f8fafc; border-top:1px dashed #ccd4de; border-bottom:1px dashed #ccd4de; color:#6b8099; font-size:0.8rem; font-weight:600; letter-spacing:0.05em; cursor:pointer;" title="Click to view source">----- PAGE BREAK -----</div>`;
         } else if (tok.type === 'roman') {
-          h += `<div style="text-align:center; padding:5px 0; margin:10px 0; background-color:#eef2f6; border:1px dashed #ccd4de; color:#6b8099; font-size:0.75rem; font-weight:600;"><i class="fas fa-file-alt" style="margin-right:6px;"></i>Page Numbering: Roman Numerals</div>`;
+          h += `<div ${clickAttr} style="text-align:center; padding:5px 0; margin:10px 0; background-color:#eef2f6; border:1px dashed #ccd4de; color:#6b8099; font-size:0.75rem; font-weight:600; cursor:pointer;" title="Click to view source"><i class="fas fa-file-alt" style="margin-right:6px;"></i>Page Numbering: Roman Numerals</div>`;
         } else if (tok.type === 'number') {
-          h += `<div style="text-align:center; padding:5px 0; margin:10px 0; background-color:#eef2f6; border:1px dashed #ccd4de; color:#6b8099; font-size:0.75rem; font-weight:600;"><i class="fas fa-file-alt" style="margin-right:6px;"></i>Page Numbering: Arabic from ${tok.val}</div>`;
+          h += `<div ${clickAttr} style="text-align:center; padding:5px 0; margin:10px 0; background-color:#eef2f6; border:1px dashed #ccd4de; color:#6b8099; font-size:0.75rem; font-weight:600; cursor:pointer;" title="Click to view source"><i class="fas fa-file-alt" style="margin-right:6px;"></i>Page Numbering: Arabic from ${tok.val}</div>`;
         } else if (tok.type === 'toc') {
-          let tocHtml = `<div style="margin:2rem 0; padding:1.5rem; background:#f8fafc; border:1px dashed #ccd4de; border-radius:6px;">
-                  <div style="font-weight:700; color:#1d3a52; margin-bottom:1rem; font-size:1.1rem;">Table of Contents (Auto-Generated in PDF)</div>`;
+          let tocHtml = `<div ${clickAttr} style="margin:2rem 0; padding:1.5rem; background:#f8fafc; border:1px dashed #ccd4de; border-radius:6px;">
+                  <div style="font-weight:700; color:#1d3a52; margin-bottom:1rem; font-size:1.1rem; cursor:pointer;" title="Click to view source">Table of Contents (Auto-Generated in PDF)</div>`;
           
           let count = 0;
           for (const item of tocItems) {
@@ -1712,7 +1815,7 @@
           tocHtml += `</div>`;
           h += tocHtml;
         } else if (tok.type === 'table') {
-          h += `<table>`;
+          h += `<table ${clickAttr}>`;
           tok.rows.forEach((row, ri) => {
             h += `<tr>`;
             row.forEach(cell => {
@@ -1723,8 +1826,8 @@
             h += `</tr>`;
           });
           h += `</table>`;
-        } else if (tok.type === 'bullet') h += `<div class="preview-bullet">• ${parseInlineHTML(tok.text)}</div>`;
-        else if (tok.type === 'p') h += `<p>${parseInlineHTML(tok.text)}</p>`;
+        } else if (tok.type === 'bullet') h += `<div class="preview-bullet" ${clickAttr}>• ${parseInlineHTML(tok.text)}</div>`;
+        else if (tok.type === 'p') h += `<p ${clickAttr}>${parseInlineHTML(tok.text)}</p>`;
       }
       pane.innerHTML = h;
     }
@@ -2147,9 +2250,13 @@
                 }
               }
 
+              // Pre-calculate all row heights to see if the whole table needs to be pushed to the next page
+              const rowHeights = [];
+              const allWrappedCells = [];
+              let totalTableH = 0;
+
               for (let ri = 0; ri < rows.length; ri++) {
                 const isHeader = (ri === 0);
-                // Pre-calculate row height by wrapping all cells
                 const wrappedCells = [];
                 let maxLines = 1;
                 for (let ci = 0; ci < colCount; ci++) {
@@ -2164,6 +2271,21 @@
                   if (wrapped.length > maxLines) maxLines = wrapped.length;
                 }
                 const rowH = maxLines * lh(tblSize) + cellPadY * 2;
+                rowHeights.push(rowH);
+                allWrappedCells.push(wrappedCells);
+                totalTableH += rowH;
+              }
+
+              // Check if the entire table can fit on a single page
+              // If it doesn't fit on the current page, BUT it would fit on a new page, break now
+              if (y + totalTableH > safeBottom && totalTableH <= (safeBottom - safeTop)) {
+                newPage();
+              }
+
+              for (let ri = 0; ri < rows.length; ri++) {
+                const isHeader = (ri === 0);
+                const rowH = rowHeights[ri];
+                const wrappedCells = allWrappedCells[ri];
 
                 if (y + rowH > safeBottom) newPage();
 
@@ -2725,6 +2847,7 @@ The learner who masters:
 
 *This textbook was generated to demonstrate the typesetting capabilities of **PageForge** by __SkillBinder__. All ten chapters showcase **bold**, *italic*, and __underlined__ text, [hyperlinks](https://skillbinder.com), data tables, bullet lists, full width horizontal rules, partial width \`***\` dividers, and multi-level headings — all rendered faithfully in the exported PDF.*`;
     updatePreview();
+    loadPreset();
   </script>
 
   <style>
