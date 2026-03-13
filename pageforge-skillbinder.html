@@ -1798,7 +1798,7 @@
             <code>---</code> — Full Rule<br>
             <code>***</code> — 75% Rule<br>
             <code>[Label](url)</code> — Link<br>
-            <code>____</code> — Fill-in blank line<br>
+            <code>____</code> — Leader line (Fill-in blank line)<br>
             <code>[PAGEBREAK]</code> — Manual page break<br>
             <code>[TOC]</code> — Table of Contents<br>
             <code>[ROMAN]</code> — Start roman numerals (i, ii..)<br>
@@ -2283,20 +2283,22 @@
     }
 
     // Draw a line of text with mixed bold/italic/underline/blank segments
-    function drawInlineLine(doc, segments, x, y, baseFontPdf, baseSz, baseColorRGB) {
+    function drawInlineLine(doc, segments, x, y, baseFontPdf, baseSz, baseColorRGB, forceStyle = null) {
       let cx = x;
       for (const seg of segments) {
         if (seg.blank) {
           // Draw a solid fill-in line — width calculated dynamically by wrapInlineSegments
           const blankW = seg.blankLen;
           const lineY = y + 0.8;
-          doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.35);
+          if (baseColorRGB) doc.setDrawColor(baseColorRGB[0], baseColorRGB[1], baseColorRGB[2]);
+          else doc.setDrawColor(0, 0, 0); 
+          doc.setLineWidth(0.35);
           doc.line(cx, lineY, cx + blankW, lineY);
           doc.setLineWidth(0.2);
           cx += blankW;
           continue;
         }
-        const st = seg.bold && seg.italic ? 'bolditalic' : seg.bold ? 'bold' : seg.italic ? 'italic' : 'normal';
+        const st = forceStyle || (seg.bold && seg.italic ? 'bolditalic' : seg.bold ? 'bold' : seg.italic ? 'italic' : 'normal');
         doc.setFont(baseFontPdf, st);
         doc.setFontSize(baseSz);
 
@@ -2329,7 +2331,7 @@
     }
 
     // Word-wrap inline segments across a max width, return array of segment-arrays per line
-    function wrapInlineSegments(doc, segments, maxW, baseFontPdf, baseSz) {
+    function wrapInlineSegments(doc, segments, maxW, baseFontPdf, baseSz, forceStyle = null) {
       const lines = [];
       let curLine = [], curW = 0;
       const spW = doc.getStringUnitWidth(' ') * baseSz * 0.352778;
@@ -2376,7 +2378,7 @@
             continue;
           }
 
-          const st = seg.bold && seg.italic ? 'bolditalic' : seg.bold ? 'bold' : seg.italic ? 'italic' : 'normal';
+          const st = forceStyle || (seg.bold && seg.italic ? 'bolditalic' : seg.bold ? 'bold' : seg.italic ? 'italic' : 'normal');
           doc.setFont(baseFontPdf, st); doc.setFontSize(baseSz);
           const ww = doc.getStringUnitWidth(word) * baseSz * 0.352778;
           const needW = curW > 0 ? spW + ww : ww;
@@ -2817,32 +2819,47 @@
             // ensure room for chapter title + at least one line of body
             if (y + lh(chSize) * 3 > safeBottom) newPage();
             let displayPage = pageNumStyle === 'arabic-only' ? String(globalArabicNum) : (bodyStarted ? String(arabicPageNum) : toRoman(romanPageNum));
-            tocEntries.push({ level: 1, text: tok.text, displayPage: displayPage, physicalPage: pageNum });
+            const segs = parseInlineSegments(tok.text);
+            const cleanText = segs.filter(s => !s.blank).map(s => s.text).join('').trim();
+            tocEntries.push({ level: 1, text: cleanText, displayPage: displayPage, physicalPage: pageNum });
             sf(chPdf, 'bold', chSize); tc(chRGB);
-            const chLines = doc.splitTextToSize(tok.text, textW);
-            for (const l of chLines) { doc.text(l, mL, y); y += lh(chSize); }
+            const wrapped = wrapInlineSegments(doc, segs, textW, chPdf, chSize, 'bold');
+            for (const wl of wrapped) {
+              drawInlineLine(doc, wl, mL, y, chPdf, chSize, chRGB, 'bold');
+              y += lh(chSize);
+            }
             y += paraGap * 2 + 1;
             doc.setTextColor(0, 0, 0);
 
           } else if (tok.type === 'h2') {
             if (y + lh(h2Size) * 3 > safeBottom) newPage();
             let displayPage = pageNumStyle === 'arabic-only' ? String(globalArabicNum) : (bodyStarted ? String(arabicPageNum) : toRoman(romanPageNum));
-            tocEntries.push({ level: 2, text: tok.text, displayPage: displayPage, physicalPage: pageNum });
+            const segs = parseInlineSegments(tok.text);
+            const cleanText = segs.filter(s => !s.blank).map(s => s.text).join('').trim();
+            tocEntries.push({ level: 2, text: cleanText, displayPage: displayPage, physicalPage: pageNum });
             y += paraGap;
             sf(h2Pdf, 'bold', h2Size); tc(h2RGB);
-            const h2Lines = doc.splitTextToSize(tok.text, textW);
-            for (const l of h2Lines) { doc.text(l, mL, y); y += lh(h2Size); }
+            const wrapped = wrapInlineSegments(doc, segs, textW, h2Pdf, h2Size, 'bold');
+            for (const wl of wrapped) {
+              drawInlineLine(doc, wl, mL, y, h2Pdf, h2Size, h2RGB, 'bold');
+              y += lh(h2Size);
+            }
             y += paraGap * 0.5;
             doc.setTextColor(0, 0, 0);
 
           } else if (tok.type === 'h3') {
             if (y + lh(h3Size) * 2 > safeBottom) newPage();
             let displayPage = pageNumStyle === 'arabic-only' ? String(globalArabicNum) : (bodyStarted ? String(arabicPageNum) : toRoman(romanPageNum));
-            tocEntries.push({ level: 3, text: tok.text, displayPage: displayPage, physicalPage: pageNum });
+            const segs = parseInlineSegments(tok.text);
+            const cleanText = segs.filter(s => !s.blank).map(s => s.text).join('').trim();
+            tocEntries.push({ level: 3, text: cleanText, displayPage: displayPage, physicalPage: pageNum });
             y += paraGap * 0.5;
             sf(h3Pdf, 'bolditalic', h3Size); tc(h3RGB);
-            const h3Lines = doc.splitTextToSize(tok.text, textW);
-            for (const l of h3Lines) { doc.text(l, mL, y); y += lh(h3Size); }
+            const wrapped = wrapInlineSegments(doc, segs, textW, h3Pdf, h3Size, 'bolditalic');
+            for (const wl of wrapped) {
+              drawInlineLine(doc, wl, mL, y, h3Pdf, h3Size, h3RGB, 'bolditalic');
+              y += lh(h3Size);
+            }
             y += paraGap * 0.3;
             doc.setTextColor(0, 0, 0);
 
