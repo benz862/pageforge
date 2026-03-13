@@ -2955,15 +2955,59 @@
               const colCount = Math.max(...rows.map(r => r.length));
               const cellPadX = 2.5;
               const cellPadY = 1.8;
-              const tableW = textW - indent;
-              const colW = tableW / colCount;
+              const tableW = textW; // Fully justified to text margins
               sf(tblPdf, 'normal', tblSize);
+
+              const colMin = new Array(colCount).fill(0);
+              const colMax = new Array(colCount).fill(0);
+
+              for (let ri = 0; ri < rows.length; ri++) {
+                const isHeader = (ri === 0);
+                for (let ci = 0; ci < colCount; ci++) {
+                  const cellText = rows[ri][ci] || '';
+                  const segs = parseInlineSegments(cellText);
+                  let maxW = 0;
+                  let minW = 0;
+                  for (const seg of segs) {
+                    const st = isHeader ? 'bold' : ((seg.bold && seg.italic) ? 'bolditalic' : seg.bold ? 'bold' : seg.italic ? 'italic' : 'normal');
+                    doc.setFont(tblPdf, st); doc.setFontSize(tblSize);
+                    maxW += doc.getStringUnitWidth(seg.text) * tblSize * 0.352778;
+                    const words = seg.text.split(/\s+/);
+                    for (const w of words) {
+                      const ww = doc.getStringUnitWidth(w) * tblSize * 0.352778;
+                      if (ww > minW) minW = ww;
+                    }
+                  }
+                  const cellTotalMin = minW + cellPadX * 2 + 2;
+                  const cellTotalMax = maxW + cellPadX * 2 + 2;
+                  if (cellTotalMin > colMin[ci]) colMin[ci] = cellTotalMin;
+                  if (cellTotalMax > colMax[ci]) colMax[ci] = cellTotalMax;
+                }
+              }
+
+              const totalMin = colMin.reduce((a, b) => a + b, 0);
+              const totalMax = colMax.reduce((a, b) => a + b, 0);
+              const colWidths = new Array(colCount).fill(0);
+
+              if (totalMax <= tableW) {
+                for (let i = 0; i < colCount; i++) colWidths[i] = (colMax[i] / totalMax) * tableW;
+              } else if (totalMin >= tableW) {
+                for (let i = 0; i < colCount; i++) colWidths[i] = (colMin[i] / totalMin) * tableW;
+              } else {
+                const remaining = tableW - totalMin;
+                const flexTotal = totalMax - totalMin;
+                for (let i = 0; i < colCount; i++) {
+                  const flex = colMax[i] - colMin[i];
+                  colWidths[i] = colMin[i] + (flex / (flexTotal || 1)) * remaining;
+                }
+              }
 
               for (let ri = 0; ri < rows.length; ri++) {
                 const isHeader = (ri === 0);
                 const wrappedCells = [];
                 let maxLines = 1;
                 for (let ci = 0; ci < colCount; ci++) {
+                  const colW = colWidths[ci];
                   const cellText = rows[ri][ci] || '';
                   const segs = parseInlineSegments(cellText);
                   if (isHeader) {
@@ -2978,8 +3022,10 @@
                 if (y + rowH > safeBottom) newPage();
 
                 const rowTop = y - lh(tblSize) + cellPadY;
+                let currentColX = mL; // No indent for tables
                 for (let ci = 0; ci < colCount; ci++) {
-                  const cx = mL + indent + ci * colW;
+                  const colW = colWidths[ci];
+                  const cx = currentColX;
                   // Background
                   if (isHeader) {
                     doc.setFillColor(tblHeadBgRGB[0], tblHeadBgRGB[1], tblHeadBgRGB[2]);
@@ -3035,6 +3081,7 @@
                     const tc = isHeader ? [255, 255, 255] : tblRGB;
                     drawInlineLine(doc, lineSegs, drawX, drawY, tblPdf, tblSize, tc);
                   }
+                  currentColX += colW;
                 }
                 y += rowH;
               }
