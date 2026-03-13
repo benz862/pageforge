@@ -2222,9 +2222,9 @@
         } else { flushTable(); }
 
         if (t.startsWith('|') && t.endsWith('|')) continue;
-        if (t.startsWith('### ')) { flush(); tokens.push({ type: 'h3', text: t.slice(4) }); }
-        else if (t.startsWith('## ')) { flush(); tokens.push({ type: 'h2', text: t.slice(3) }); }
-        else if (t.startsWith('# ')) { flush(); tokens.push({ type: 'ch', text: t.slice(2) }); }
+        if (t.startsWith('### ')) { flush(); tokens.push({ type: 'h3', text: t.slice(4), line: i }); }
+        else if (t.startsWith('## ')) { flush(); tokens.push({ type: 'h2', text: t.slice(3), line: i }); }
+        else if (t.startsWith('# ')) { flush(); tokens.push({ type: 'ch', text: t.slice(2), line: i }); }
         else if (t === '---') { flush(); tokens.push({ type: 'hr' }); }
         else if (t === '***') { flush(); tokens.push({ type: 'hr-partial' }); }
         else if (t.toUpperCase() === '[TOC]') { flush(); tokens.push({ type: 'toc' }); }
@@ -2471,9 +2471,9 @@
       const tocItems = parsedTokens.filter(t => t.type === 'ch' || t.type === 'h2' || t.type === 'h3');
 
       for (const tok of parsedTokens) {
-        if (tok.type === 'ch') h += `<div class="preview-ch">${parseInlineHTML(tok.text)}</div>`;
-        else if (tok.type === 'h2') h += `<div class="preview-h2">${parseInlineHTML(tok.text)}</div>`;
-        else if (tok.type === 'h3') h += `<div class="preview-h3">${parseInlineHTML(tok.text)}</div>`;
+        if (tok.type === 'ch') h += `<div class="preview-ch" onclick="scrollToEditorLine(${tok.line})" style="cursor:pointer;" title="Click to edit">${parseInlineHTML(tok.text)}</div>`;
+        else if (tok.type === 'h2') h += `<div class="preview-h2" onclick="scrollToEditorLine(${tok.line})" style="cursor:pointer;" title="Click to edit">${parseInlineHTML(tok.text)}</div>`;
+        else if (tok.type === 'h3') h += `<div class="preview-h3" onclick="scrollToEditorLine(${tok.line})" style="cursor:pointer;" title="Click to edit">${parseInlineHTML(tok.text)}</div>`;
         else if (tok.type === 'hr') h += `<hr class="preview-hr"/>`;
         else if (tok.type === 'hr-partial') h += `<hr class="preview-hr preview-hr-partial"/>`;
         else if (tok.type === 'pagebreak') h += `<div style="text-align:center; padding:10px 0; margin:20px 0; background-color:#f8fafc; border-top:1px dashed #ccd4de; border-bottom:1px dashed #ccd4de; color:#6b8099; font-size:0.8rem; font-weight:600; letter-spacing:0.05em;">----- PAGE BREAK -----</div>`;
@@ -2520,6 +2520,23 @@
         else if (tok.type === 'p') h += `<p>${parseInlineHTML(tok.text)}</p>`;
       }
       pane.innerHTML = h;
+    }
+
+    function scrollToEditorLine(lineIdx) {
+      const ta = document.getElementById('content');
+      const lines = ta.value.split('\\n');
+      let charPos = 0;
+      for (let i = 0; i < lineIdx; i++) {
+        charPos += lines[i].length + 1; // +1 for the newline
+      }
+      ta.focus();
+      ta.setSelectionRange(charPos, charPos);
+      
+      // Approximate line height to scroll the textarea to jump the line to the middle of the box
+      const lineHeight = parseFloat(getComputedStyle(ta).lineHeight);
+      if (!isNaN(lineHeight)) {
+        ta.scrollTop = (lineIdx * lineHeight) - (ta.clientHeight / 2) + (lineHeight / 2);
+      }
     }
 
     // Live-update preview on any font/colour/alignment change
