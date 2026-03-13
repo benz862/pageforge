@@ -2445,7 +2445,10 @@
       let h = `<div class="preview-title">${title}</div>
            <div class="preview-author">${author}</div>`;
 
-      for (const tok of parseContent(raw)) {
+      const parsedTokens = parseContent(raw);
+      const tocItems = parsedTokens.filter(t => t.type === 'ch' || t.type === 'h2' || t.type === 'h3');
+
+      for (const tok of parsedTokens) {
         if (tok.type === 'ch') h += `<div class="preview-ch">${parseInlineHTML(tok.text)}</div>`;
         else if (tok.type === 'h2') h += `<div class="preview-h2">${parseInlineHTML(tok.text)}</div>`;
         else if (tok.type === 'h3') h += `<div class="preview-h3">${parseInlineHTML(tok.text)}</div>`;
@@ -2455,16 +2458,27 @@
         else if (tok.type === 'roman') h += `<div style="text-align:center; padding:5px 0; margin:10px 0; background-color:#eef2f6; border:1px dashed #ccd4de; color:#6b8099; font-size:0.75rem; font-weight:600;"><i class="fas fa-file-alt" style="margin-right:6px;"></i>Page Numbering: Roman Numerals</div>`;
         else if (tok.type === 'number') h += `<div style="text-align:center; padding:5px 0; margin:10px 0; background-color:#eef2f6; border:1px dashed #ccd4de; color:#6b8099; font-size:0.75rem; font-weight:600;"><i class="fas fa-file-alt" style="margin-right:6px;"></i>Page Numbering: Arabic from ${tok.val}</div>`;
         else if (tok.type === 'toc') {
-          h += `<div style="margin:2rem 0; padding:1.5rem; background:#f8fafc; border:1px dashed #ccd4de; border-radius:6px;">
-                  <div style="font-weight:700; color:#1d3a52; margin-bottom:1rem; font-size:1.1rem;">Table of Contents (Auto-Generated in PDF)</div>
-                  <div style="display:flex; justify-content:space-between; color:#6b8099; font-size:0.9rem; margin-bottom:0.4rem;">
-                    <span>Chapter 1: The First Step</span><span>1</span>
-                  </div>
-                  <div style="display:flex; justify-content:space-between; color:#6b8099; font-size:0.9rem; margin-bottom:0.4rem;">
-                    <span style="padding-left:1rem;">1.1 Getting Started</span><span>3</span>
-                  </div>
-                  <div style="font-size:0.8rem; color:#aab5c2; margin-top:1rem; font-style:italic;">*This is a preview placeholder. The final PDF will map your exact document pages.*</div>
-                </div>`;
+          let tocHtml = `<div style="margin:2rem 0; padding:1.5rem; background:#f8fafc; border:1px dashed #ccd4de; border-radius:6px;">
+                  <div style="font-weight:700; color:#1d3a52; margin-bottom:1rem; font-size:1.1rem;">Table of Contents (Auto-Generated in PDF)</div>`;
+          
+          let count = 0;
+          for (const item of tocItems) {
+            if (count > 8) break;
+            let indent = item.type === 'ch' ? 0 : item.type === 'h2' ? 1 : 2;
+            let weight = item.type === 'ch' ? '600' : '400';
+            tocHtml += `<div style="display:flex; justify-content:space-between; color:#6b8099; font-size:0.9rem; margin-bottom:0.4rem; font-weight:${weight};">
+                    <span style="padding-left:${indent}rem;">${parseInlineHTML(item.text)}</span><span>—</span>
+                  </div>`;
+            count++;
+          }
+
+          if (tocItems.length > 8) {
+             tocHtml += `<div style="font-size:0.8rem; color:#aab5c2; margin-top:1rem; font-style:italic;">... and ${tocItems.length - 8} more chapters generated on export ...</div>`;
+          } else if (tocItems.length === 0) {
+             tocHtml += `<div style="font-size:0.8rem; color:#aab5c2; margin-top:1rem; font-style:italic;">Chapters will appear here...</div>`;
+          }
+          tocHtml += `</div>`;
+          h += tocHtml;
         }
         else if (tok.type === 'bullet') h += `<div class="preview-bullet">• ${parseInlineHTML(tok.text)}</div>`;
         else if (tok.type === 'checkbox') h += `<div class="preview-bullet" style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.25rem;"><span style="display:inline-flex;align-items:center;justify-content:center;width:13px;height:13px;min-width:13px;border:1.5px solid ${tok.checked ? '#1d3a52' : '#aab5c2'};border-radius:2px;background:${tok.checked ? '#1d3a52' : '#fff'};font-size:9px;font-weight:900;color:#fff;line-height:1;">${tok.checked ? '✓' : ''}</span><span style="${tok.checked ? 'text-decoration:line-through;opacity:0.5;' : ''}">${parseInlineHTML(tok.text)}</span></div>`;
