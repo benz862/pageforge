@@ -1640,6 +1640,8 @@
       const spW = doc.getStringUnitWidth(' ') * baseSz * 0.352778;
 
       for (const seg of segments) {
+        if (!seg || (!seg.text && !seg.blank)) continue;
+        
         if (seg.blank) {
           // Treat fill-in blank as a single non-breaking token
           let blankW = (seg.blankLen || 8) * baseSz * 0.352778 * 0.48;
@@ -1669,7 +1671,11 @@
           }
           continue;
         }
-        const words = seg.text.split(' ');
+        
+        const textStr = String(seg.text || '');
+        if (!textStr) continue;
+        
+        const words = textStr.split(' ');
         for (let wi = 0; wi < words.length; wi++) {
           const word = words[wi];
           if (!word) {
@@ -2107,14 +2113,17 @@
             // ensure room for chapter title + at least one line of body
             if (y + lh(chSize) * 3 > safeBottom) newPage();
             let displayPage = pageNumStyle === 'arabic-only' ? String(globalArabicNum) : String(arabicPageNum);
-            const segs = parseInlineSegments(tok.text);
-            const cleanText = segs.filter(s => !s.blank).map(s => s.text).join('').trim();
-            tocEntries.push({ level: 1, text: cleanText, displayPage: displayPage, physicalPage: pageNum });
-            sf(chPdf, 'bold', chSize); tc(chRGB);
-            const wrapped = wrapInlineSegments(doc, segs, textW, chPdf, chSize, 'bold');
-            for (const wl of wrapped) {
-              drawInlineLine(doc, wl, mL, y, chPdf, chSize, chRGB, 'bold');
-              y += lh(chSize);
+            const textContent = String(tok.text || '');
+            if (textContent) {
+              const segs = parseInlineSegments(textContent);
+              const cleanText = segs.filter(s => !s.blank).map(s => s.text).join('').trim();
+              tocEntries.push({ level: 1, text: cleanText, displayPage: displayPage, physicalPage: pageNum });
+              sf(chPdf, 'bold', chSize); tc(chRGB);
+              const wrapped = wrapInlineSegments(doc, segs, textW, chPdf, chSize, 'bold');
+              for (const wl of wrapped) {
+                drawInlineLine(doc, wl, mL, y, chPdf, chSize, chRGB, 'bold');
+                y += lh(chSize);
+              }
             }
             y += paraGap * 2 + 1;
             doc.setTextColor(0, 0, 0);
@@ -2122,15 +2131,18 @@
           } else if (tok.type === 'h2') {
             if (y + lh(h2Size) * 3 > safeBottom) newPage();
             let displayPage = pageNumStyle === 'arabic-only' ? String(globalArabicNum) : (bodyStarted ? String(arabicPageNum) : toRoman(romanPageNum));
-            const segs = parseInlineSegments(tok.text);
-            const cleanText = segs.filter(s => !s.blank).map(s => s.text).join('').trim();
-            tocEntries.push({ level: 2, text: cleanText, displayPage: displayPage, physicalPage: pageNum });
-            y += paraGap;
-            sf(h2Pdf, 'bold', h2Size); tc(h2RGB);
-            const wrapped = wrapInlineSegments(doc, segs, textW, h2Pdf, h2Size, 'bold');
-            for (const wl of wrapped) {
-              drawInlineLine(doc, wl, mL, y, h2Pdf, h2Size, h2RGB, 'bold');
-              y += lh(h2Size);
+            const textContent = String(tok.text || '');
+            if (textContent) {
+              const segs = parseInlineSegments(textContent);
+              const cleanText = segs.filter(s => !s.blank).map(s => s.text).join('').trim();
+              tocEntries.push({ level: 2, text: cleanText, displayPage: displayPage, physicalPage: pageNum });
+              y += paraGap;
+              sf(h2Pdf, 'bold', h2Size); tc(h2RGB);
+              const wrapped = wrapInlineSegments(doc, segs, textW, h2Pdf, h2Size, 'bold');
+              for (const wl of wrapped) {
+                drawInlineLine(doc, wl, mL, y, h2Pdf, h2Size, h2RGB, 'bold');
+                y += lh(h2Size);
+              }
             }
             y += paraGap * 0.5;
             doc.setTextColor(0, 0, 0);
@@ -2138,15 +2150,18 @@
           } else if (tok.type === 'h3') {
             if (y + lh(h3Size) * 2 > safeBottom) newPage();
             let displayPage = pageNumStyle === 'arabic-only' ? String(globalArabicNum) : (bodyStarted ? String(arabicPageNum) : toRoman(romanPageNum));
-            const segs = parseInlineSegments(tok.text);
-            const cleanText = segs.filter(s => !s.blank).map(s => s.text).join('').trim();
-            tocEntries.push({ level: 3, text: cleanText, displayPage: displayPage, physicalPage: pageNum });
-            y += paraGap * 0.5;
-            sf(h3Pdf, 'bolditalic', h3Size); tc(h3RGB);
-            const wrapped = wrapInlineSegments(doc, segs, textW, h3Pdf, h3Size, 'bolditalic');
-            for (const wl of wrapped) {
-              drawInlineLine(doc, wl, mL, y, h3Pdf, h3Size, h3RGB, 'bolditalic');
-              y += lh(h3Size);
+            const textContent = String(tok.text || '');
+            if (textContent) {
+              const segs = parseInlineSegments(textContent);
+              const cleanText = segs.filter(s => !s.blank).map(s => s.text).join('').trim();
+              tocEntries.push({ level: 3, text: cleanText, displayPage: displayPage, physicalPage: pageNum });
+              y += paraGap * 0.5;
+              sf(h3Pdf, 'bolditalic', h3Size); tc(h3RGB);
+              const wrapped = wrapInlineSegments(doc, segs, textW, h3Pdf, h3Size, 'bolditalic');
+              for (const wl of wrapped) {
+                drawInlineLine(doc, wl, mL, y, h3Pdf, h3Size, h3RGB, 'bolditalic');
+                y += lh(h3Size);
+              }
             }
             y += paraGap * 0.3;
             doc.setTextColor(0, 0, 0);
@@ -2361,16 +2376,20 @@
             const xp = mL + indent;
             const pw2 = textW - indent;
             sf(bPdf, 'normal', fontSize); tc(bodyRGB);
-            const segs = parseInlineSegments(tok.text);
-            const pLines = wrapInlineSegments(doc, segs, pw2, bPdf, fontSize);
-            for (const pl of pLines) {
-              if (y + lh(fontSize) > safeBottom) newPage();
-              drawInlineLine(doc, pl, xp, y, bPdf, fontSize, bodyRGB);
-              y += lh(fontSize);
+            const textContent = String(tok.text || '');
+            if (textContent) {
+              const segs = parseInlineSegments(textContent);
+              const pLines = wrapInlineSegments(doc, segs, pw2, bPdf, fontSize);
+              for (const pl of pLines) {
+                if (y + lh(fontSize) > safeBottom) newPage();
+                drawInlineLine(doc, pl, xp, y, bPdf, fontSize, bodyRGB);
+                y += lh(fontSize);
+              }
             }
             y += paraGap;
             doc.setTextColor(0, 0, 0);
           }
+        } // <-- END FOR LOOP
         }
 
         // BACK COVER
