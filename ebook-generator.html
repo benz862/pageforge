@@ -2231,8 +2231,8 @@
                 }
                 y += rowH;
               }
-              y += paraGap;
               doc.setTextColor(0, 0, 0); doc.setDrawColor(0, 0, 0);
+              y += lh(tblSize) / 2 + paraGap;
             }
 
           } else if (tok.type === 'p') {
