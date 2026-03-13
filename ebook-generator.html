@@ -1726,7 +1726,6 @@
         } else if (tok.type === 'bullet') h += `<div class="preview-bullet">• ${parseInlineHTML(tok.text)}</div>`;
         else if (tok.type === 'p') h += `<p>${parseInlineHTML(tok.text)}</p>`;
       }
-      }
       pane.innerHTML = h;
     }
 
