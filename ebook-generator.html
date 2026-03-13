@@ -1543,6 +1543,19 @@
         if (seg.blank) {
           // Treat fill-in blank as a single non-breaking token
           let blankW = (seg.blankLen || 8) * baseSz * 0.352778 * 0.48;
+          
+          // If this is the last segment of the entire block, stretch it to the right margin!
+          const isLastSegment = (seg === segments[segments.length - 1]);
+          
+          if (isLastSegment) {
+            const remainingW = maxW - curW;
+            // Only stretch it if it's longer than whatever basic width it would have had,
+            // or if it's on a line by itself.
+            if (remainingW > 0) {
+              blankW = remainingW;
+            }
+          }
+
           if (curW > 0 && curW + blankW > maxW) {
             // Clip the blank space exactly to the remaining page boundary margin
             const remainingW = maxW - curW;
